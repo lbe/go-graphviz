@@ -740,6 +740,30 @@ func (e *Edge) SetFontColor(v string) *Edge {
 	return e
 }
 
+// SetFontName
+// Name used for text.
+// https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:fontname
+func (g *Graph) SetFontName(v string) *Graph {
+	g.SafeSet(string(fontNameAttr), v, "San-Serif")
+	return g
+}
+
+// SetFontName
+// Name used for text.
+// https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:fontname
+func (n *Node) SetFontName(v string) *Node {
+	n.SafeSet(string(fontNameAttr), v, "San-Serif")
+	return n
+}
+
+// SetFontName
+// Name used for text.
+// https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:fontname
+func (e *Edge) SetFontName(v string) *Edge {
+	e.SafeSet(string(fontNameAttr), v, "San-Serif")
+	return e
+}
+
 // SetFontSize
 // Font size, in points, used for text.
 // https://graphviz.gitlab.io/_pages/doc/info/attrs.html#a:fontsize
