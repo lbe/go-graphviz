@@ -4,8 +4,8 @@ import (
 	"io/ioutil"
 	"unsafe"
 
-	"github.com/goccy/go-graphviz/cdt"
-	"github.com/goccy/go-graphviz/internal/ccall"
+	"github.com/lbe/go-graphviz/cdt"
+	"github.com/lbe/go-graphviz/internal/ccall"
 )
 
 type Graph struct {

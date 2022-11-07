@@ -1,4 +1,4 @@
-module github.com/goccy/go-graphviz
+module github.com/lbe/go-graphviz
 
 go 1.12
 

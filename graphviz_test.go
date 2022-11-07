@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/goccy/go-graphviz"
+	"github.com/lbe/go-graphviz"
 )
 
 func TestGraphviz_Image(t *testing.T) {
