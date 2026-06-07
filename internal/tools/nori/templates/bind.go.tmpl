@@ -4,29 +4,24 @@ package wasm
 
 import (
 	"context"
-	_ "embed"
+	"encoding/binary"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
-	"path/filepath"
-	"unsafe"
 	"reflect"
 	"strconv"
+	"unsafe"
 
-	"github.com/tetratelabs/wazero"
-	"github.com/tetratelabs/wazero/api"
-	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
+	wasihost "github.com/lbe/wasm2go-wasi-host"
 )
 
 var _ unsafe.Pointer
 
-//go:embed {{ .WasmName }}.wasm
-var wasmFile []byte
-
 type WasmModule struct {
-	mod api.Module
-	fs  *WasmFileSystem
-	lookupFuncMap *LookupFuncMap
+	module          *Module
+	fs              *WasmFileSystem
+	lookupFuncMap   *LookupFuncMap
 	callbackFuncMap *CallbackFuncMap
 }
 
@@ -63,6 +58,52 @@ func Register_{{ .Name }}(fn func({{- range .Args }}{{ .Value.GoType }},{{- end 
 }
 {{- end }}
 
+type envImpl struct {
+	lookupFuncMap   *LookupFuncMap
+	callbackFuncMap *CallbackFuncMap
+}
+
+{{- range .ExportCallbackFunctions }}
+func (e *envImpl) Xwasm_bridge_{{ .Name }}({{ range .Args }}v{{ .Index }} {{ if .Value.Is64Bit }}int64{{ else }}int32{{ end }}, {{ end }}){{ if .Return }} {{ if .Return.Value.Is64Bit }}int64{{ else }}int32{{ end }}{{ end }} {
+	{{- range .Args }}
+	arg{{ .Index }}, err := func() ({{ .Value.GoType }}, error) {
+		var zero {{ .Value.GoType }}
+		_ = zero
+		{{- if .Value.IsPtrValue }}
+		ret := new({{ .Value.Elem.GoType }})
+		{{- end }}
+		{{- template "ToGoValueEnvImpl" (map "Src" (printf "uint64(v%d)" .Index) "Dst" "ret" "Value" .Value) }}
+		{{- if .Value.IsPtrValue }}
+		return ret, nil
+		{{- else }}
+		return ret, nil
+		{{- end }}
+	}()
+	if err != nil {
+		panic(err)
+	}
+	{{- end }}
+	funcID, err := e.lookupFuncMap.{{ .Name }}({{- range .Args}}arg{{ .Index }},{{- end }})
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.{{ .Name }}[funcID]; exists {
+		{{- if .Return }}
+		if _, err := fn(context.Background(), {{- range .Args}}arg{{ .Index }},{{- end }}); err != nil {
+			panic(err)
+		}
+		{{- else }}
+		if err := fn(context.Background(), {{- range .Args}}arg{{ .Index }},{{- end }}); err != nil {
+			panic(err)
+		}
+		{{- end }}
+	}
+	{{- if .Return }}
+	return 0
+	{{- end }}
+}
+{{- end }}
+
 var mod *WasmModule
 
 type CallbackFunc[T any] struct {
@@ -78,87 +119,19 @@ func CreateCallbackFunc[T any](cb T, funcID uint64) *CallbackFunc[T] {
 }
 
 func init() {
-	ctx := context.Background()
-	cfg := wazero.NewRuntimeConfig()
-	if cache := getCompilationCache(); cache != nil {
-		cfg = cfg.WithCompilationCache(cache)
-	}
-
-	r := wazero.NewRuntimeWithConfig(ctx, cfg)
-
-	env := r.NewHostModuleBuilder("env")
-	{{- range .ExportCallbackFunctions }}
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			{{- range .Args }}
-			arg{{ .Index }}, err := func() ({{ .Value.GoType }}, error) {
-				var zero {{ .Value.GoType }}
-				_ = zero
-				{{- if .Value.IsPtrValue }}
-				ret := new({{ .Value.Elem.GoType }})
-				{{- end }}
-				{{- template "ToGoValue" . }}
-				{{- if .Value.IsPtrValue }}
-				return ret, nil
-				{{- else }}
-				return {{ .Dst }}, nil
-				{{- end }}
-			}()
-			if err != nil {
-				panic(err)
-			}
-			{{- end }}
-
-			funcID, err := mod.lookupFuncMap.{{ .Name }}({{- range .Args}}arg{{ .Index }},{{- end }})
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.{{ .Name }}[funcID]; exists {
-				{{- if .Return }}
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, {{- range .Args}}arg{{ .Index }},{{- end }}); err != nil {
-					panic(err)
-				}
-				{{- else }}
-				if err := fn(ctx, {{- range .Args}}arg{{ .Index }},{{- end }}); err != nil {
-					panic(err)
-				}
-				{{- end }}
-			}
-		}),
-		[]api.ValueType{ {{- range .Args }}api.ValueTypeI{{- if .Value.Is64Bit -}}64{{- else -}}32{{- end -}},{{- end }} },
-		{{- if .Return }}
-		[]api.ValueType{api.ValueTypeI{{- if .Return.Value.Is64Bit -}}64{{- else -}}32{{- end -}} },
-		{{- else }}
-		[]api.ValueType{},
-		{{- end }}
-	).Export("wasm_bridge_{{ .Name }}")
-	{{- end }}
-	if _, err := env.Instantiate(ctx); err != nil {
-		panic(err)
-	}
-	wasi_snapshot_preview1.MustInstantiate(ctx, r)
-
-	compiled, err := r.CompileModule(ctx, wasmFile)
-	if err != nil {
-		panic(err)
-	}
 	fs := &WasmFileSystem{}
-	m, err := r.InstantiateModule(
-		ctx,
-		compiled,
-		wazero.NewModuleConfig().
-			WithFSConfig(wazero.NewFSConfig().WithFSMount(fs, "/")).
-			WithStdout(os.Stdout).
-			WithName("wasi"),
+	cfg := wasihost.NewModuleConfig().
+		WithStdout(os.Stdout).
+		WithFS(wasihost.NewFSConfig().WithFSMount("/", fs))
+
+	var module *Module
+	state := wasihost.New(
+		func() []byte { return *module.Xmemory().Slice() },
+		cfg,
 	)
-	if err != nil {
-		panic(err)
-	}
-	mod = &WasmModule{
-		mod: m,
-		fs: fs,
-		lookupFuncMap: &LookupFuncMap{},
+
+	env := &envImpl{
+		lookupFuncMap:   &LookupFuncMap{},
 		callbackFuncMap: &CallbackFuncMap{
 			{{- range .ExportCallbackFunctions }}
 			{{- if .Return }}
@@ -169,190 +142,164 @@ func init() {
 			{{- end }}
 		},
 	}
+
+	module = New(env, state)
+	module.X_start()
+
+	mod = &WasmModule{
+		module:          module,
+		fs:              fs,
+		lookupFuncMap:   env.lookupFuncMap,
+		callbackFuncMap: env.callbackFuncMap,
+	}
 	{{- range .ExportEnums }}
 	{{- $enumName := .Name }}
 	// bind {{ $enumName }} values.
 	{{- range .EnumValues }}
-	{{ .GoName }} = {{ $enumName }}(mod.getEnumValue(ctx, "{{ .WasmName }}"))
+	{{ .GoName }} = {{ $enumName }}(mod.module.Xwasm_bridge_get_{{ .WasmName }}())
 	{{- end }}
 	{{- end }}
-}
-
-func (m *WasmModule) getEnumValue(ctx context.Context, value string) int {
-	ret, err := mod.ExportedFunction("wasm_bridge_get_" + value).Call(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return mod.toInt(ret[0])
 }
 
 func WasmPtr(v wasmStruct) uint64 {
 	return v.getPtr()
 }
 
-func getCompilationCache() wazero.CompilationCache {
-	tmpDir := os.TempDir()
-	if tmpDir == "" {
-		return nil
-	}
-	cacheDir := filepath.Join(tmpDir, "go-graphviz")
-	if _, err := os.Stat(cacheDir); err != nil {
-		if err := os.Mkdir(cacheDir, 0o755); err != nil {
-			return nil
-		}
-	}
-	cache, err := wazero.NewCompilationCacheWithDir(cacheDir)
-	if err != nil {
-		return nil
-	}
-	return cache
-}
-
-func (m *WasmModule) ExportedFunction(name string) api.Function {
-	return m.mod.ExportedFunction(name)
-}
-
 func (m *WasmModule) malloc(ctx context.Context, size uint64) (uint64, error) {
-	ret, err := m.ExportedFunction("malloc").Call(ctx, size)
-	if err != nil {
-		return 0, err
-	}
-	return ret[0], nil
+	ret := m.module.Xmalloc(int32(size))
+	return uint64(ret), nil
 }
 
 func (m *WasmModule) free(ctx context.Context, p uint64) error {
-	if _, err := m.ExportedFunction("free").Call(ctx, p); err != nil {
-		return err
-	}
+	m.module.Xfree(int32(p))
 	return nil
 }
 
 func (m *WasmModule) newObject(ctx context.Context, name string) (uint64, error) {
-	ret, err := mod.ExportedFunction("wasm_bridge_new_" + name).Call(ctx)
-	if err != nil {
-		return 0, err
+	method := reflect.ValueOf(m.module).MethodByName("Xwasm_bridge_new_" + name)
+	if !method.IsValid() {
+		return 0, fmt.Errorf("unknown newObject: %s", name)
 	}
-	return ret[0], nil
+	ret := method.Call(nil)
+	return uint64(ret[0].Int()), nil
 }
 
-func (m *WasmModule) setField(ctx context.Context, name string, recv, arg uint64) error {
-	if _, err := mod.ExportedFunction("wasm_bridge_set_" + name).Call(ctx, recv, arg); err != nil {
-		return err
+// zeroGraphTextspanLayout zeros the layout and freefunc fields of every
+// textspan in a graph's primary label. The wasm text layout code leaves
+// these uninitialized for empty lines (leading \n). On a fresh heap they
+// happen to be 0; after reuse they contain stale pointers that crash the
+// wasm freefunc dispatch. This is called from FreeLayout before cleanup.
+func (m *WasmModule) zeroGraphTextspanLayout(graphPtr uint64) {
+	mem := *m.module.Xmemory().Slice()
+	if int(graphPtr)+20 > len(mem) {
+		return
 	}
-	return nil
+	// Graph → data pointer at offset 16 (graph_t.data)
+	dataPtr := uint64(binary.LittleEndian.Uint32(mem[graphPtr+16:]))
+	if dataPtr == 0 || int(dataPtr)+16 > len(mem) {
+		return
+	}
+	// data → label pointer at offset 12 (Agtag_t.label)
+	labelPtr := uint64(binary.LittleEndian.Uint32(mem[dataPtr+12:]))
+	if labelPtr == 0 || int(labelPtr)+84 > len(mem) {
+		return
+	}
+	// Skip HTML labels: offset 82 is html flag (byte)
+	if mem[labelPtr+82] != 0 {
+		return
+	}
+	textspanPtr := uint64(binary.LittleEndian.Uint32(mem[labelPtr+72:]))
+	textspanCount := uint64(binary.LittleEndian.Uint32(mem[labelPtr+76:]))
+	if textspanPtr == 0 || textspanCount == 0 {
+		return
+	}
+	const textspanStride = 56
+	for i := uint64(0); i < textspanCount; i++ {
+		off := textspanPtr + i*textspanStride
+		if int(off)+16 > len(mem) {
+			break
+		}
+		binary.LittleEndian.PutUint32(mem[off+8:], 0)  // layout  = NULL
+		binary.LittleEndian.PutUint32(mem[off+12:], 0) // freefunc = 0
+	}
 }
 
-func (m *WasmModule) setFieldFunction(ctx context.Context, name string, recv uint64) error {
-	if _, err := mod.ExportedFunction("wasm_bridge_set_" + name).Call(ctx, recv); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *WasmModule) getField(ctx context.Context, name string, recv uint64) (ret uint64, e error) {
-	retPtr, err := m.NewPtr(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		e = m.free(ctx, retPtr)
-	}()
-
-	if _, err := m.ExportedFunction("wasm_bridge_get_" + name).Call(ctx, recv, retPtr); err != nil {
-		return 0, err
-	}
-	p, err := m.readU32(retPtr)
-	if err != nil {
-		return 0, err
-	}
-	return p, nil
-}
-
-func (m *WasmModule) call(ctx context.Context, name string, args ...uint64) error {
-	if _, err := mod.ExportedFunction("wasm_bridge_" + name).Call(ctx, args...); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint64) (r uint64, e error) {
-	retPtr, err := m.NewPtr(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		e = m.free(ctx, retPtr)
-	}()
-
-	if err := m.call(ctx, name, append(append([]uint64{}, args...), retPtr)...); err != nil {
-		return 0, err
-	}
-	p, err := m.readU32(retPtr)
-	if err != nil {
-		return 0, err
-	}
-	return p, nil
-}
-
+{{- define "WasmCast" }}
+{{- if or .Value.IsPtrValue .Value.IsStringKind }}int32({{ .Name }})
+{{- else if eq .Value.GoType "int64" }}int64({{ .Name }})
+{{- else if eq .Value.GoType "uint64" }}int64({{ .Name }})
+{{- else if eq .Value.GoType "float32" }}float32({{ .Name }})
+{{- else if eq .Value.GoType "float64" }}float64({{ .Name }})
+{{- else }}int32({{ .Name }})
+{{- end }}
+{{- end }}
 func (m *WasmModule) read(addr, length uint64) ([]byte, error) {
-	bytes, ok := m.mod.Memory().Read(uint32(addr), uint32(length))
-	if !ok {
+	mem := *m.module.Xmemory().Slice()
+	if int(addr)+int(length) > len(mem) {
 		return nil, fmt.Errorf(
 			`failed to read wasm memory: (ptr, size) = (%d, %d) and memory size is %d`,
-			addr, length, m.mod.Memory().Size(),
+			addr, length, len(mem),
 		)
 	}
-	return bytes, nil
+	return mem[addr : addr+length], nil
 }
 
 func (m *WasmModule) readU32(addr uint64) (uint64, error) {
-	p, ok := m.mod.Memory().ReadUint32Le(uint32(addr))
-	if !ok {
+	mem := *m.module.Xmemory().Slice()
+	if int(addr)+4 > len(mem) {
 		return 0, fmt.Errorf(
 			`failed to read wasm memory: (ptr, size) = (%d, 4) and memory size is %d`,
-			addr, m.mod.Memory().Size(),
+			addr, len(mem),
 		)
 	}
-	return uint64(p), nil
+	return uint64(binary.LittleEndian.Uint32(mem[addr:])), nil
 }
 
 func (m *WasmModule) write(p uint64, b []byte) error {
-	if !m.mod.Memory().Write(uint32(p), b) {
+	mem := *m.module.Xmemory().Slice()
+	if int(p)+len(b) > len(mem) {
 		return fmt.Errorf(
 			`failed to write wasm memory: (ptr, size) = (%d, %d) and memory size is %d`,
-			p, len(b), m.mod.Memory().Size(),
+			p, len(b), len(mem),
 		)
 	}
+	copy(mem[p:], b)
 	return nil
 }
 
 func (m *WasmModule) writeU32(p uint64, v uint32) error {
-	if !m.mod.Memory().WriteUint32Le(uint32(p), v) {
+	mem := *m.module.Xmemory().Slice()
+	if int(p)+4 > len(mem) {
 		return fmt.Errorf(
 			`failed to write wasm memory: ptr = %d and memory size is %d`,
-			p, m.mod.Memory().Size(),
+			p, len(mem),
 		)
 	}
+	binary.LittleEndian.PutUint32(mem[p:], v)
 	return nil
 }
 
 func (m *WasmModule) writeU64(p uint64, v uint64) error {
-	if !m.mod.Memory().WriteUint64Le(uint32(p), v) {
+	mem := *m.module.Xmemory().Slice()
+	if int(p)+8 > len(mem) {
 		return fmt.Errorf(
 			`failed to write wasm memory: ptr = %d and memory size is %d`,
-			p, m.mod.Memory().Size(),
+			p, len(mem),
 		)
 	}
+	binary.LittleEndian.PutUint64(mem[p:], v)
 	return nil
 }
 
 func (m *WasmModule) writeF64(p uint64, v float64) error {
-	if !m.mod.Memory().WriteFloat64Le(uint32(p), v) {
+	mem := *m.module.Xmemory().Slice()
+	if int(p)+8 > len(mem) {
 		return fmt.Errorf(
 			`failed to write wasm memory: ptr = %d and memory size is %d`,
-			p, m.mod.Memory().Size(),
+			p, len(mem),
 		)
 	}
+	binary.LittleEndian.PutUint64(mem[p:], math.Float64bits(v))
 	return nil
 }
 
@@ -575,71 +522,71 @@ type numberType interface {
 }
 
 
-func (m *WasmModule) toIntWasmValue(_ context.Context, v any) (uint64, error) {
+func (m *WasmModule) toIntWasmValue(_ context.Context, v any) (int32, error) {
 	switch vv := v.(type) {
 	case int:
-		return uint64(vv), nil
+		return int32(vv), nil
 	case int8:
-		return uint64(vv), nil
+		return int32(vv), nil
 	case int16:
-		return uint64(vv), nil
+		return int32(vv), nil
 	case int32:
-		return uint64(vv), nil
+		return vv, nil
 	case int64:
-		return uint64(vv), nil
+		return int32(vv), nil
 	}
-	return uint64(reflect.ValueOf(v).Int()), nil
+	return int32(reflect.ValueOf(v).Int()), nil
 }
 
-func (m *WasmModule) toInt32WasmValue(_ context.Context, v int32) (uint64, error) {
-	return uint64(v), nil
+func (m *WasmModule) toInt32WasmValue(_ context.Context, v int32) (int32, error) {
+	return v, nil
 }
 
-func (m *WasmModule) toInt64WasmValue(_ context.Context, v int64) (uint64, error) {
-	return uint64(v), nil
+func (m *WasmModule) toInt64WasmValue(_ context.Context, v int64) (int64, error) {
+	return v, nil
 }
 
-func (m *WasmModule) toUintWasmValue(_ context.Context, v any) (uint64, error) {
+func (m *WasmModule) toUintWasmValue(_ context.Context, v any) (uint32, error) {
 	switch vv := v.(type) {
 	case uint:
-		return uint64(vv), nil
+		return uint32(vv), nil
 	case uint8:
-		return uint64(vv), nil
+		return uint32(vv), nil
 	case uint16:
-		return uint64(vv), nil
+		return uint32(vv), nil
 	case uint32:
-		return uint64(vv), nil
-	case uint64:
 		return vv, nil
+	case uint64:
+		return uint32(vv), nil
 	}
 	return 0, nil
 }
 
-func (m *WasmModule) toUint32WasmValue(_ context.Context, v uint32) (uint64, error) {
-	return uint64(v), nil
+func (m *WasmModule) toUint32WasmValue(_ context.Context, v uint32) (uint32, error) {
+	return v, nil
 }
 
 func (m *WasmModule) toUint64WasmValue(_ context.Context, v uint64) (uint64, error) {
 	return v, nil
 }
 
-func (m *WasmModule) toBoolWasmValue(_ context.Context, v bool) (uint64, error) {
+func (m *WasmModule) toBoolWasmValue(_ context.Context, v bool) (int32, error) {
 	if v {
 		return 1, nil
 	}
 	return 0, nil
 }
 
-func (m *WasmModule) toFuncWasmValue(_ context.Context, _ any) (uint64, error) {
+func (m *WasmModule) toFuncWasmValue(_ context.Context, _ any) (int32, error) {
 	return 0, nil
 }
 
-func (m *WasmModule) toFloatWasmValue(_ context.Context, v float32) (uint64, error) {
-	return api.EncodeF32(v), nil
+func (m *WasmModule) toFloatWasmValue(_ context.Context, v float32) (float32, error) {
+	return v, nil
 }
 
-func (m *WasmModule) toDoubleWasmValue(_ context.Context, v float64) (uint64, error) {
-	return api.EncodeF64(v), nil
+func (m *WasmModule) toDoubleWasmValue(_ context.Context, v float64) (float64, error) {
+	return v, nil
 }
 
 func (m *WasmModule) toIntArrayWasmValue(ctx context.Context, v []int) (uint64, error) {
@@ -880,7 +827,8 @@ func (v *{{ $msgName }}) Set{{ .GoName }}(ctx context.Context, arg {{ .Value.GoI
 		return fmt.Errorf("cannot find lookup function. you must call Register_{{ .Value.FuncName }} before")
 	}
 	mod.callbackFuncMap.{{ .Value.FuncName }}[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "{{ .WasmName }}", v.getPtr())
+	mod.module.Xwasm_bridge_set_{{ .WasmName }}(int32(v.getPtr()))
+	return nil
 }
 {{- else }}
 func (v *{{ $msgName }}) Set{{ .GoName }}(_arg {{ .Value.GoType }}) error {
@@ -889,7 +837,8 @@ func (v *{{ $msgName }}) Set{{ .GoName }}(_arg {{ .Value.GoType }}) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "{{ .WasmName }}", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_{{ .WasmName }}(int32(v.getPtr()), {{ template "WasmCast" (map "Value" .Value "Name" "arg") }})
+	return nil
 }
 
 func (v *{{ $msgName }}) Get{{ .GoName }}() {{ .Value.GoType }} {
@@ -902,7 +851,13 @@ func (v *{{ $msgName }}) Get{{ .GoName }}() {{ .Value.GoType }} {
 
 func (v *{{ $msgName }}) get{{ .GoName }}(ctx context.Context) ({{ .Value.GoType }}, error) {
 	var zero {{ .Value.GoType }}
-	p, err := mod.getField(ctx, "{{ .WasmName }}", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_{{ .WasmName }}(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -949,7 +904,16 @@ func (v *{{ .Receiver }}) {{ .GoName }}(ctx context.Context, {{- range .Args -}}
 		return zero, err
 	}
 	{{- end }}
-	p, err := mod.callWithRet(ctx, "{{ .WasmName }}", v.getPtr(), {{- range .Args }}arg{{- .Index -}},{{- end }})
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	{{- if and (eq .GoName "FreeLayout") (eq .Receiver "Context") }}
+	mod.zeroGraphTextspanLayout(arg0)
+	{{- end }}
+	mod.module.Xwasm_bridge_{{ .WasmName }}(int32(v.getPtr()), {{- range .Args }}{{ template "WasmCast" (map "Value" .Value "Name" (printf "arg%d" .Index)) }},{{- end }}int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -981,9 +945,7 @@ func (v *{{ .Receiver }}) {{ .GoName }}(ctx context.Context, {{- range .Args -}}
 		return err
 	}
 	{{- end }}
-	if err := mod.call(ctx, "{{ .WasmName }}", v.getPtr(), {{- range .Args }}arg{{- .Index -}},{{- end }}); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_{{ .WasmName }}(int32(v.getPtr()), {{- range .Args }}{{ template "WasmCast" (map "Value" .Value "Name" (printf "arg%d" .Index)) }},{{- end }})
 	return nil
 }
 {{- end }}
@@ -1006,7 +968,13 @@ func {{ .GoName }}(ctx context.Context, {{- range .Args -}}_arg{{- .Index }} {{ 
 		return zero, err
 	}
 	{{- end }}
-	p, err := mod.callWithRet(ctx, "{{ .WasmName }}", {{- range .Args }}arg{{- .Index -}},{{- end }})
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_{{ .WasmName }}({{- range .Args }}{{ template "WasmCast" (map "Value" .Value "Name" (printf "arg%d" .Index)) }},{{- end }}int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -1038,9 +1006,7 @@ func {{ .GoName }}(ctx context.Context, {{- range .Args -}}_arg{{- .Index }} {{ 
 		return err
 	}
 	{{- end }}
-	if err := mod.call(ctx, "{{ .WasmName }}", {{- range .Args }}arg{{- .Index -}},{{- end }}); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_{{ .WasmName }}({{- range .Args }}{{ template "WasmCast" (map "Value" .Value "Name" (printf "arg%d" .Index)) }},{{- end }})
 	{{- range .Args }}
 	{{- if .Value.IsPtrValue }}
 	{
@@ -1099,3 +1065,36 @@ if err != nil {
 {{- end }}
 
 {{- end }}
+
+{{- define "ToGoValueEnvImpl" }}
+{{- if .Value.IsPtrValue }}
+{{- template "toGoValueWithSliceEnvImpl" (map "Src" .Src "Dst" "value" "Value" .Value) }}
+*{{ .Dst }} = value
+{{- else }}
+{{- template "toGoValueWithSliceEnvImpl" . }}
+{{- end }}
+{{- end }}
+
+{{- define "toGoValueWithSliceEnvImpl" }}
+{{- if .Value.IsSlice }}
+slice, err := mod.toSlice(context.Background(), {{ .Src }})
+if err != nil {
+	return zero, err
+}
+{{- template "toGoValueEnvImpl" (map "Src" "slice" "Dst" .Dst "Value" .Value) }}
+{{- else }}
+{{- template "toGoValueEnvImpl" . }}
+{{- end }}
+{{- end }}
+
+{{- define "toGoValueEnvImpl" }}
+{{- if or .Value.IsStringKind .Value.IsFloatKind }}
+{{ .Dst }}, err := {{ .Value.GoTypeConverter }}(context.Background(), {{ .Src }})
+if err != nil {
+	return zero, err
+}
+{{- else }}
+{{ .Dst }} := {{ .Value.GoTypeConverter }}({{ .Src }})
+{{- end }}
+{{- end }}
+

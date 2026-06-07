@@ -4,27 +4,22 @@ package wasm
 
 import (
 	"context"
-	_ "embed"
+	"encoding/binary"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strconv"
 	"unsafe"
 
-	"github.com/tetratelabs/wazero"
-	"github.com/tetratelabs/wazero/api"
-	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
+	wasihost "github.com/lbe/wasm2go-wasi-host"
 )
 
 var _ unsafe.Pointer
 
-//go:embed graphviz.wasm
-var wasmFile []byte
-
 type WasmModule struct {
-	mod             api.Module
+	module          *Module
 	fs              *WasmFileSystem
 	lookupFuncMap   *LookupFuncMap
 	callbackFuncMap *CallbackFuncMap
@@ -378,6 +373,2068 @@ func Register_LoadImageEngine_LoadImage(fn func(*Job, *UserShape, *BoxFloat, boo
 	mod.lookupFuncMap.LoadImageEngine_LoadImage = fn
 }
 
+type envImpl struct {
+	lookupFuncMap   *LookupFuncMap
+	callbackFuncMap *CallbackFuncMap
+}
+
+func (e *envImpl) Xwasm_bridge_IDAllocator_Open(v0 int32, v1 int32) int32 {
+	arg0, err := func() (*Graph, error) {
+		var zero *Graph
+		_ = zero
+		ret := newGraph(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (*ClientDiscipline, error) {
+		var zero *ClientDiscipline
+		_ = zero
+		ret := newClientDiscipline(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.IDAllocator_Open(arg0, arg1)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.IDAllocator_Open[funcID]; exists {
+		if _, err := fn(context.Background(), arg0, arg1); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_IDAllocator_Map(v0 int32, v1 int32, v2 int32, v3 int32, v4 int32) int32 {
+	arg0, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v2))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg3, err := func() (*uint64, error) {
+		var zero *uint64
+		_ = zero
+		ret := new(uint64)
+		value := mod.toUint64(uint64(v3))
+		*ret = value
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg4, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v4))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.IDAllocator_Map(arg0, arg1, arg2, arg3, arg4)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.IDAllocator_Map[funcID]; exists {
+		if _, err := fn(context.Background(), arg0, arg1, arg2, arg3, arg4); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_IDAllocator_Alloc(v0 int32, v1 int32, v2 int64) int32 {
+	arg0, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (uint64, error) {
+		var zero uint64
+		_ = zero
+		ret := mod.toUint64(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.IDAllocator_Alloc(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.IDAllocator_Alloc[funcID]; exists {
+		if _, err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_IDAllocator_Free(v0 int32, v1 int32, v2 int64) {
+	arg0, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (uint64, error) {
+		var zero uint64
+		_ = zero
+		ret := mod.toUint64(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.IDAllocator_Free(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.IDAllocator_Free[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_IDAllocator_Print(v0 int32, v1 int32, v2 int64) int32 {
+	arg0, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (uint64, error) {
+		var zero uint64
+		_ = zero
+		ret := mod.toUint64(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.IDAllocator_Print(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.IDAllocator_Print[funcID]; exists {
+		if _, err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_IDAllocator_Close(v0 int32) {
+	arg0, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.IDAllocator_Close(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.IDAllocator_Close[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_IDAllocator_IdRegister(v0 int32, v1 int32, v2 int32) {
+	arg0, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.IDAllocator_IdRegister(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.IDAllocator_IdRegister[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_IOService_Afread(v0 int32, v1 int32, v2 int32) int32 {
+	arg0, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.IOService_Afread(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.IOService_Afread[funcID]; exists {
+		if _, err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_IOService_Putstr(v0 int32, v1 int32) int32 {
+	arg0, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.IOService_Putstr(arg0, arg1)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.IOService_Putstr[funcID]; exists {
+		if _, err := fn(context.Background(), arg0, arg1); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_IOService_Flush(v0 int32) int32 {
+	arg0, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.IOService_Flush(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.IOService_Flush[funcID]; exists {
+		if _, err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_ClientEventCallback_ObjectFunc(v0 int32, v1 int32, v2 int32) {
+	arg0, err := func() (*Graph, error) {
+		var zero *Graph
+		_ = zero
+		ret := newGraph(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (*Object, error) {
+		var zero *Object
+		_ = zero
+		ret := newObject(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.ClientEventCallback_ObjectFunc(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.ClientEventCallback_ObjectFunc[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_ClientEventCallback_ObjectUpdateFunc(v0 int32, v1 int32, v2 int32, v3 int32) {
+	arg0, err := func() (*Graph, error) {
+		var zero *Graph
+		_ = zero
+		ret := newGraph(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (*Object, error) {
+		var zero *Object
+		_ = zero
+		ret := newObject(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg3, err := func() (*Sym, error) {
+		var zero *Sym
+		_ = zero
+		ret := newSym(uint64(v3))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.ClientEventCallback_ObjectUpdateFunc(arg0, arg1, arg2, arg3)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.ClientEventCallback_ObjectUpdateFunc[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2, arg3); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_UserRef(v0 int32) int32 {
+	arg0, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v0))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.UserRef(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.UserRef[funcID]; exists {
+		if _, err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_DictMemory(v0 int32, v1 int32, v2 int32, v3 int32) int32 {
+	arg0, err := func() (*Dict, error) {
+		var zero *Dict
+		_ = zero
+		ret := newDict(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (uint32, error) {
+		var zero uint32
+		_ = zero
+		ret := mod.toUint32(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg3, err := func() (*DictDisc, error) {
+		var zero *DictDisc
+		_ = zero
+		ret := newDictDisc(uint64(v3))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DictMemory(arg0, arg1, arg2, arg3)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DictMemory[funcID]; exists {
+		if _, err := fn(context.Background(), arg0, arg1, arg2, arg3); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_DictSearch(v0 int32, v1 int32, v2 int32) int32 {
+	arg0, err := func() (*Dict, error) {
+		var zero *Dict
+		_ = zero
+		ret := newDict(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DictSearch(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DictSearch[funcID]; exists {
+		if _, err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_DictMake(v0 int32, v1 int32) int32 {
+	arg0, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (*DictDisc, error) {
+		var zero *DictDisc
+		_ = zero
+		ret := newDictDisc(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DictMake(arg0, arg1)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DictMake[funcID]; exists {
+		if _, err := fn(context.Background(), arg0, arg1); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_DictFree(v0 int32) {
+	arg0, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DictFree(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DictFree[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_DictCompare(v0 int32, v1 int32) int32 {
+	arg0, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DictCompare(arg0, arg1)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DictCompare[funcID]; exists {
+		if _, err := fn(context.Background(), arg0, arg1); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_DictWalk(v0 int32, v1 int32) int32 {
+	arg0, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (any, error) {
+		var zero any
+		_ = zero
+		ret := mod.toAny(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DictWalk(arg0, arg1)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DictWalk[funcID]; exists {
+		if _, err := fn(context.Background(), arg0, arg1); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_UserShape_DataFree(v0 int32) {
+	arg0, err := func() (*UserShape, error) {
+		var zero *UserShape
+		_ = zero
+		ret := newUserShape(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.UserShape_DataFree(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.UserShape_DataFree[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_DeviceCallbacks_Refresh(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DeviceCallbacks_Refresh(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DeviceCallbacks_Refresh[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_DeviceCallbacks_ButtonPress(v0 int32, v1 int32, v2 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (*PointFloat, error) {
+		var zero *PointFloat
+		_ = zero
+		ret := newPointFloat(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DeviceCallbacks_ButtonPress(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DeviceCallbacks_ButtonPress[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_DeviceCallbacks_ButtonRelease(v0 int32, v1 int32, v2 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (*PointFloat, error) {
+		var zero *PointFloat
+		_ = zero
+		ret := newPointFloat(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DeviceCallbacks_ButtonRelease(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DeviceCallbacks_ButtonRelease[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_DeviceCallbacks_Motion(v0 int32, v1 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (*PointFloat, error) {
+		var zero *PointFloat
+		_ = zero
+		ret := newPointFloat(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DeviceCallbacks_Motion(arg0, arg1)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DeviceCallbacks_Motion[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_DeviceCallbacks_Modify(v0 int32, v1 int32, v2 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v2))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DeviceCallbacks_Modify(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DeviceCallbacks_Modify[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_DeviceCallbacks_Delete(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DeviceCallbacks_Delete(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DeviceCallbacks_Delete[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_DeviceCallbacks_Read(v0 int32, v1 int32, v2 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v2))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DeviceCallbacks_Read(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DeviceCallbacks_Read[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_DeviceCallbacks_Layout(v0 int32, v1 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DeviceCallbacks_Layout(arg0, arg1)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DeviceCallbacks_Layout[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_DeviceCallbacks_Render(v0 int32, v1 int32, v2 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v2))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DeviceCallbacks_Render(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DeviceCallbacks_Render[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_DeviceEngine_Initialize(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DeviceEngine_Initialize(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DeviceEngine_Initialize[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_DeviceEngine_Format(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DeviceEngine_Format(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DeviceEngine_Format[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_DeviceEngine_Finalize(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.DeviceEngine_Finalize(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.DeviceEngine_Finalize[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_BeginJob(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_BeginJob(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_BeginJob[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_EndJob(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_EndJob(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_EndJob[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_BeginGraph(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_BeginGraph(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_BeginGraph[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_EndGraph(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_EndGraph(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_EndGraph[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_BeginLayer(v0 int32, v1 int32, v2 int32, v3 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg3, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v3))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_BeginLayer(arg0, arg1, arg2, arg3)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_BeginLayer[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2, arg3); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_EndLayer(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_EndLayer(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_EndLayer[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_BeginPage(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_BeginPage(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_BeginPage[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_EndPage(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_EndPage(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_EndPage[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_BeginCluster(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_BeginCluster(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_BeginCluster[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_EndCluster(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_EndCluster(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_EndCluster[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_BeginNodes(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_BeginNodes(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_BeginNodes[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_EndNodes(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_EndNodes(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_EndNodes[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_BeginEdges(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_BeginEdges(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_BeginEdges[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_EndEdges(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_EndEdges(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_EndEdges[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_BeginNode(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_BeginNode(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_BeginNode[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_EndNode(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_EndNode(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_EndNode[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_BeginEdge(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_BeginEdge(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_BeginEdge[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_EndEdge(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_EndEdge(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_EndEdge[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_BeginAnchor(v0 int32, v1 int32, v2 int32, v3 int32, v4 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v2))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg3, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v3))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg4, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v4))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_BeginAnchor(arg0, arg1, arg2, arg3, arg4)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_BeginAnchor[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2, arg3, arg4); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_EndAnchor(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_EndAnchor(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_EndAnchor[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_BeginLabel(v0 int32, v1 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (LabelType, error) {
+		var zero LabelType
+		_ = zero
+		ret := LabelType(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_BeginLabel(arg0, arg1)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_BeginLabel[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_EndLabel(v0 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_EndLabel(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_EndLabel[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_Textspan(v0 int32, v1 int32, v2 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (*PointFloat, error) {
+		var zero *PointFloat
+		_ = zero
+		ret := newPointFloat(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (*Textspan, error) {
+		var zero *Textspan
+		_ = zero
+		ret := newTextspan(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_Textspan(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_Textspan[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_ResolveColor(v0 int32, v1 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (*Color, error) {
+		var zero *Color
+		_ = zero
+		ret := newColor(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_ResolveColor(arg0, arg1)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_ResolveColor[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_Ellipse(v0 int32, v1 int32, v2 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() ([]*PointFloat, error) {
+		var zero []*PointFloat
+		_ = zero
+		slice, err := mod.toSlice(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		ret := newPointFloatSlice(slice)
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_Ellipse(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_Ellipse[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_Polygon(v0 int32, v1 int32, v2 int32, v3 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() ([]*PointFloat, error) {
+		var zero []*PointFloat
+		_ = zero
+		slice, err := mod.toSlice(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		ret := newPointFloatSlice(slice)
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (uint32, error) {
+		var zero uint32
+		_ = zero
+		ret := mod.toUint32(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg3, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v3))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_Polygon(arg0, arg1, arg2, arg3)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_Polygon[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2, arg3); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_Beziercurve(v0 int32, v1 int32, v2 int32, v3 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() ([]*PointFloat, error) {
+		var zero []*PointFloat
+		_ = zero
+		slice, err := mod.toSlice(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		ret := newPointFloatSlice(slice)
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (uint32, error) {
+		var zero uint32
+		_ = zero
+		ret := mod.toUint32(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg3, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v3))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_Beziercurve(arg0, arg1, arg2, arg3)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_Beziercurve[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2, arg3); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_Polyline(v0 int32, v1 int32, v2 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() ([]*PointFloat, error) {
+		var zero []*PointFloat
+		_ = zero
+		slice, err := mod.toSlice(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		ret := newPointFloatSlice(slice)
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (uint32, error) {
+		var zero uint32
+		_ = zero
+		ret := mod.toUint32(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_Polyline(arg0, arg1, arg2)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_Polyline[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_Comment(v0 int32, v1 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_Comment(arg0, arg1)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_Comment[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_RenderEngine_LibraryShape(v0 int32, v1 int32, v2 int32, v3 int32, v4 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (string, error) {
+		var zero string
+		_ = zero
+		ret, err := mod.toString(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() ([]*PointFloat, error) {
+		var zero []*PointFloat
+		_ = zero
+		slice, err := mod.toSlice(context.Background(), uint64(v2))
+		if err != nil {
+			return zero, err
+		}
+		ret := newPointFloatSlice(slice)
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg3, err := func() (uint32, error) {
+		var zero uint32
+		_ = zero
+		ret := mod.toUint32(uint64(v3))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg4, err := func() (int, error) {
+		var zero int
+		_ = zero
+		ret := mod.toInt(uint64(v4))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.RenderEngine_LibraryShape(arg0, arg1, arg2, arg3, arg4)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.RenderEngine_LibraryShape[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2, arg3, arg4); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_LayoutEngine_Layout(v0 int32) {
+	arg0, err := func() (*Graph, error) {
+		var zero *Graph
+		_ = zero
+		ret := newGraph(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.LayoutEngine_Layout(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.LayoutEngine_Layout[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_LayoutEngine_Cleanup(v0 int32) {
+	arg0, err := func() (*Graph, error) {
+		var zero *Graph
+		_ = zero
+		ret := newGraph(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.LayoutEngine_Cleanup(arg0)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.LayoutEngine_Cleanup[funcID]; exists {
+		if err := fn(context.Background(), arg0); err != nil {
+			panic(err)
+		}
+	}
+}
+func (e *envImpl) Xwasm_bridge_TextLayoutEngine_TextLayout(v0 int32, v1 int32) int32 {
+	arg0, err := func() (*Textspan, error) {
+		var zero *Textspan
+		_ = zero
+		ret := newTextspan(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() ([]string, error) {
+		var zero []string
+		_ = zero
+		slice, err := mod.toSlice(context.Background(), uint64(v1))
+		if err != nil {
+			return zero, err
+		}
+		ret, err := mod.toStringSlice(context.Background(), slice)
+		if err != nil {
+			return zero, err
+		}
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.TextLayoutEngine_TextLayout(arg0, arg1)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.TextLayoutEngine_TextLayout[funcID]; exists {
+		if _, err := fn(context.Background(), arg0, arg1); err != nil {
+			panic(err)
+		}
+	}
+	return 0
+}
+func (e *envImpl) Xwasm_bridge_LoadImageEngine_LoadImage(v0 int32, v1 int32, v2 int32, v3 int32) {
+	arg0, err := func() (*Job, error) {
+		var zero *Job
+		_ = zero
+		ret := newJob(uint64(v0))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg1, err := func() (*UserShape, error) {
+		var zero *UserShape
+		_ = zero
+		ret := newUserShape(uint64(v1))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg2, err := func() (*BoxFloat, error) {
+		var zero *BoxFloat
+		_ = zero
+		ret := newBoxFloat(uint64(v2))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	arg3, err := func() (bool, error) {
+		var zero bool
+		_ = zero
+		ret := mod.toBool(uint64(v3))
+		return ret, nil
+	}()
+	if err != nil {
+		panic(err)
+	}
+	funcID, err := e.lookupFuncMap.LoadImageEngine_LoadImage(arg0, arg1, arg2, arg3)
+	if err != nil {
+		panic(err)
+	}
+	if fn, exists := e.callbackFuncMap.LoadImageEngine_LoadImage[funcID]; exists {
+		if err := fn(context.Background(), arg0, arg1, arg2, arg3); err != nil {
+			panic(err)
+		}
+	}
+}
+
 var mod *WasmModule
 
 type CallbackFunc[T any] struct {
@@ -393,2424 +2450,18 @@ func CreateCallbackFunc[T any](cb T, funcID uint64) *CallbackFunc[T] {
 }
 
 func init() {
-	ctx := context.Background()
-	cfg := wazero.NewRuntimeConfig()
-	if cache := getCompilationCache(); cache != nil {
-		cfg = cfg.WithCompilationCache(cache)
-	}
-
-	r := wazero.NewRuntimeWithConfig(ctx, cfg)
-
-	env := r.NewHostModuleBuilder("env")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Graph, error) {
-				var zero *Graph
-				_ = zero
-				ret := newGraph(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (*ClientDiscipline, error) {
-				var zero *ClientDiscipline
-				_ = zero
-				ret := newClientDiscipline(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.IDAllocator_Open(arg0, arg1)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.IDAllocator_Open[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_IDAllocator_Open")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[2])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg3, err := func() (*uint64, error) {
-				var zero *uint64
-				_ = zero
-				ret := new(uint64)
-				value := mod.toUint64(stack[3])
-				*ret = value
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg4, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[4])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.IDAllocator_Map(arg0, arg1, arg2, arg3, arg4)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.IDAllocator_Map[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1, arg2, arg3, arg4); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_IDAllocator_Map")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (uint64, error) {
-				var zero uint64
-				_ = zero
-				ret := mod.toUint64(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.IDAllocator_Alloc(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.IDAllocator_Alloc[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI64},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_IDAllocator_Alloc")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (uint64, error) {
-				var zero uint64
-				_ = zero
-				ret := mod.toUint64(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.IDAllocator_Free(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.IDAllocator_Free[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI64},
-		[]api.ValueType{},
-	).Export("wasm_bridge_IDAllocator_Free")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (uint64, error) {
-				var zero uint64
-				_ = zero
-				ret := mod.toUint64(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.IDAllocator_Print(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.IDAllocator_Print[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI64},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_IDAllocator_Print")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.IDAllocator_Close(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.IDAllocator_Close[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_IDAllocator_Close")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.IDAllocator_IdRegister(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.IDAllocator_IdRegister[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_IDAllocator_IdRegister")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.IOService_Afread(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.IOService_Afread[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_IOService_Afread")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.IOService_Putstr(arg0, arg1)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.IOService_Putstr[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_IOService_Putstr")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.IOService_Flush(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.IOService_Flush[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_IOService_Flush")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Graph, error) {
-				var zero *Graph
-				_ = zero
-				ret := newGraph(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (*Object, error) {
-				var zero *Object
-				_ = zero
-				ret := newObject(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.ClientEventCallback_ObjectFunc(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.ClientEventCallback_ObjectFunc[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_ClientEventCallback_ObjectFunc")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Graph, error) {
-				var zero *Graph
-				_ = zero
-				ret := newGraph(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (*Object, error) {
-				var zero *Object
-				_ = zero
-				ret := newObject(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg3, err := func() (*Sym, error) {
-				var zero *Sym
-				_ = zero
-				ret := newSym(stack[3])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.ClientEventCallback_ObjectUpdateFunc(arg0, arg1, arg2, arg3)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.ClientEventCallback_ObjectUpdateFunc[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_ClientEventCallback_ObjectUpdateFunc")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[0])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.UserRef(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.UserRef[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_UserRef")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Dict, error) {
-				var zero *Dict
-				_ = zero
-				ret := newDict(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (uint32, error) {
-				var zero uint32
-				_ = zero
-				ret := mod.toUint32(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg3, err := func() (*DictDisc, error) {
-				var zero *DictDisc
-				_ = zero
-				ret := newDictDisc(stack[3])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DictMemory(arg0, arg1, arg2, arg3)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DictMemory[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_DictMemory")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Dict, error) {
-				var zero *Dict
-				_ = zero
-				ret := newDict(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DictSearch(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DictSearch[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_DictSearch")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (*DictDisc, error) {
-				var zero *DictDisc
-				_ = zero
-				ret := newDictDisc(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DictMake(arg0, arg1)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DictMake[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_DictMake")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DictFree(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DictFree[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_DictFree")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DictCompare(arg0, arg1)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DictCompare[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_DictCompare")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (any, error) {
-				var zero any
-				_ = zero
-				ret := mod.toAny(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DictWalk(arg0, arg1)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DictWalk[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_DictWalk")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*UserShape, error) {
-				var zero *UserShape
-				_ = zero
-				ret := newUserShape(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.UserShape_DataFree(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.UserShape_DataFree[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_UserShape_DataFree")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Refresh(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Refresh[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_DeviceCallbacks_Refresh")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (*PointFloat, error) {
-				var zero *PointFloat
-				_ = zero
-				ret := newPointFloat(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DeviceCallbacks_ButtonPress(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_ButtonPress[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_DeviceCallbacks_ButtonPress")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (*PointFloat, error) {
-				var zero *PointFloat
-				_ = zero
-				ret := newPointFloat(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DeviceCallbacks_ButtonRelease(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_ButtonRelease[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_DeviceCallbacks_ButtonRelease")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (*PointFloat, error) {
-				var zero *PointFloat
-				_ = zero
-				ret := newPointFloat(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Motion(arg0, arg1)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Motion[funcID]; exists {
-				if err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_DeviceCallbacks_Motion")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[2])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Modify(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Modify[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_DeviceCallbacks_Modify")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Delete(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Delete[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_DeviceCallbacks_Delete")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[2])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Read(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Read[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_DeviceCallbacks_Read")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Layout(arg0, arg1)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Layout[funcID]; exists {
-				if err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_DeviceCallbacks_Layout")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[2])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DeviceCallbacks_Render(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DeviceCallbacks_Render[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_DeviceCallbacks_Render")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DeviceEngine_Initialize(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DeviceEngine_Initialize[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_DeviceEngine_Initialize")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DeviceEngine_Format(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DeviceEngine_Format[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_DeviceEngine_Format")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.DeviceEngine_Finalize(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.DeviceEngine_Finalize[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_DeviceEngine_Finalize")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_BeginJob(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginJob[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_BeginJob")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_EndJob(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_EndJob[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_EndJob")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_BeginGraph(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginGraph[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_BeginGraph")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_EndGraph(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_EndGraph[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_EndGraph")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg3, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[3])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_BeginLayer(arg0, arg1, arg2, arg3)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginLayer[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_BeginLayer")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_EndLayer(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_EndLayer[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_EndLayer")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_BeginPage(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginPage[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_BeginPage")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_EndPage(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_EndPage[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_EndPage")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_BeginCluster(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginCluster[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_BeginCluster")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_EndCluster(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_EndCluster[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_EndCluster")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_BeginNodes(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginNodes[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_BeginNodes")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_EndNodes(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_EndNodes[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_EndNodes")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_BeginEdges(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginEdges[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_BeginEdges")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_EndEdges(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_EndEdges[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_EndEdges")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_BeginNode(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginNode[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_BeginNode")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_EndNode(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_EndNode[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_EndNode")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_BeginEdge(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginEdge[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_BeginEdge")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_EndEdge(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_EndEdge[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_EndEdge")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[2])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg3, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[3])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg4, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[4])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_BeginAnchor(arg0, arg1, arg2, arg3, arg4)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginAnchor[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2, arg3, arg4); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_BeginAnchor")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_EndAnchor(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_EndAnchor[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_EndAnchor")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (LabelType, error) {
-				var zero LabelType
-				_ = zero
-				ret := LabelType(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_BeginLabel(arg0, arg1)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_BeginLabel[funcID]; exists {
-				if err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_BeginLabel")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_EndLabel(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_EndLabel[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_EndLabel")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (*PointFloat, error) {
-				var zero *PointFloat
-				_ = zero
-				ret := newPointFloat(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (*Textspan, error) {
-				var zero *Textspan
-				_ = zero
-				ret := newTextspan(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_Textspan(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_Textspan[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_Textspan")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (*Color, error) {
-				var zero *Color
-				_ = zero
-				ret := newColor(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_ResolveColor(arg0, arg1)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_ResolveColor[funcID]; exists {
-				if err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_ResolveColor")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() ([]*PointFloat, error) {
-				var zero []*PointFloat
-				_ = zero
-				slice, err := mod.toSlice(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				ret := newPointFloatSlice(slice)
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_Ellipse(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_Ellipse[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_Ellipse")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() ([]*PointFloat, error) {
-				var zero []*PointFloat
-				_ = zero
-				slice, err := mod.toSlice(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				ret := newPointFloatSlice(slice)
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (uint32, error) {
-				var zero uint32
-				_ = zero
-				ret := mod.toUint32(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg3, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[3])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_Polygon(arg0, arg1, arg2, arg3)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_Polygon[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_Polygon")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() ([]*PointFloat, error) {
-				var zero []*PointFloat
-				_ = zero
-				slice, err := mod.toSlice(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				ret := newPointFloatSlice(slice)
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (uint32, error) {
-				var zero uint32
-				_ = zero
-				ret := mod.toUint32(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg3, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[3])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_Beziercurve(arg0, arg1, arg2, arg3)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_Beziercurve[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_Beziercurve")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() ([]*PointFloat, error) {
-				var zero []*PointFloat
-				_ = zero
-				slice, err := mod.toSlice(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				ret := newPointFloatSlice(slice)
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (uint32, error) {
-				var zero uint32
-				_ = zero
-				ret := mod.toUint32(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_Polyline(arg0, arg1, arg2)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_Polyline[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_Polyline")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_Comment(arg0, arg1)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_Comment[funcID]; exists {
-				if err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_Comment")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (string, error) {
-				var zero string
-				_ = zero
-				ret, err := mod.toString(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() ([]*PointFloat, error) {
-				var zero []*PointFloat
-				_ = zero
-				slice, err := mod.toSlice(ctx, stack[2])
-				if err != nil {
-					return zero, err
-				}
-				ret := newPointFloatSlice(slice)
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg3, err := func() (uint32, error) {
-				var zero uint32
-				_ = zero
-				ret := mod.toUint32(stack[3])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg4, err := func() (int, error) {
-				var zero int
-				_ = zero
-				ret := mod.toInt(stack[4])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.RenderEngine_LibraryShape(arg0, arg1, arg2, arg3, arg4)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.RenderEngine_LibraryShape[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2, arg3, arg4); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_RenderEngine_LibraryShape")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Graph, error) {
-				var zero *Graph
-				_ = zero
-				ret := newGraph(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.LayoutEngine_Layout(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.LayoutEngine_Layout[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_LayoutEngine_Layout")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Graph, error) {
-				var zero *Graph
-				_ = zero
-				ret := newGraph(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.LayoutEngine_Cleanup(arg0)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.LayoutEngine_Cleanup[funcID]; exists {
-				if err := fn(ctx, arg0); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_LayoutEngine_Cleanup")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Textspan, error) {
-				var zero *Textspan
-				_ = zero
-				ret := newTextspan(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() ([]string, error) {
-				var zero []string
-				_ = zero
-				slice, err := mod.toSlice(ctx, stack[1])
-				if err != nil {
-					return zero, err
-				}
-				ret, err := mod.toStringSlice(ctx, slice)
-				if err != nil {
-					return zero, err
-				}
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.TextLayoutEngine_TextLayout(arg0, arg1)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.TextLayoutEngine_TextLayout[funcID]; exists {
-				// TODO: must back returned value to wasm side.
-				if _, err := fn(ctx, arg0, arg1); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{api.ValueTypeI32},
-	).Export("wasm_bridge_TextLayoutEngine_TextLayout")
-	env = env.NewFunctionBuilder().WithGoModuleFunction(
-		api.GoModuleFunc(func(ctx context.Context, _ api.Module, stack []uint64) {
-			arg0, err := func() (*Job, error) {
-				var zero *Job
-				_ = zero
-				ret := newJob(stack[0])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg1, err := func() (*UserShape, error) {
-				var zero *UserShape
-				_ = zero
-				ret := newUserShape(stack[1])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg2, err := func() (*BoxFloat, error) {
-				var zero *BoxFloat
-				_ = zero
-				ret := newBoxFloat(stack[2])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-			arg3, err := func() (bool, error) {
-				var zero bool
-				_ = zero
-				ret := mod.toBool(stack[3])
-				return ret, nil
-			}()
-			if err != nil {
-				panic(err)
-			}
-
-			funcID, err := mod.lookupFuncMap.LoadImageEngine_LoadImage(arg0, arg1, arg2, arg3)
-			if err != nil {
-				panic(err)
-			}
-			if fn, exists := mod.callbackFuncMap.LoadImageEngine_LoadImage[funcID]; exists {
-				if err := fn(ctx, arg0, arg1, arg2, arg3); err != nil {
-					panic(err)
-				}
-			}
-		}),
-		[]api.ValueType{api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32, api.ValueTypeI32},
-		[]api.ValueType{},
-	).Export("wasm_bridge_LoadImageEngine_LoadImage")
-	if _, err := env.Instantiate(ctx); err != nil {
-		panic(err)
-	}
-	wasi_snapshot_preview1.MustInstantiate(ctx, r)
-
-	compiled, err := r.CompileModule(ctx, wasmFile)
-	if err != nil {
-		panic(err)
-	}
 	fs := &WasmFileSystem{}
-	m, err := r.InstantiateModule(
-		ctx,
-		compiled,
-		wazero.NewModuleConfig().
-			WithFSConfig(wazero.NewFSConfig().WithFSMount(fs, "/")).
-			WithName("wasi"),
+	cfg := wasihost.NewModuleConfig().
+		WithStdout(os.Stdout).
+		WithFS(wasihost.NewFSConfig().WithFSMount("/", fs))
+
+	var module *Module
+	state := wasihost.New(
+		func() []byte { return *module.Xmemory().Slice() },
+		cfg,
 	)
-	if err != nil {
-		panic(err)
-	}
-	mod = &WasmModule{
-		mod:           m,
-		fs:            fs,
+
+	env := &envImpl{
 		lookupFuncMap: &LookupFuncMap{},
 		callbackFuncMap: &CallbackFuncMap{
 			IDAllocator_Open:                     make(map[uint64]func(context.Context, *Graph, *ClientDiscipline) (any, error)),
@@ -2881,292 +2532,256 @@ func init() {
 			LoadImageEngine_LoadImage:            make(map[uint64]func(context.Context, *Job, *UserShape, *BoxFloat, bool) error),
 		},
 	}
-	// bind ObjectTag values.
-	GRAPH = ObjectTag(mod.getEnumValue(ctx, "AGRAPH"))
-	NODE = ObjectTag(mod.getEnumValue(ctx, "AGNODE"))
-	OUT_EDGE = ObjectTag(mod.getEnumValue(ctx, "AGOUTEDGE"))
-	IN_EDGE = ObjectTag(mod.getEnumValue(ctx, "AGINEDGE"))
-	EDGE = ObjectTag(mod.getEnumValue(ctx, "AGEDGE"))
-	// bind ErrorLevel values.
-	WARN = ErrorLevel(mod.getEnumValue(ctx, "AGWARN"))
-	ERR = ErrorLevel(mod.getEnumValue(ctx, "AGERR"))
-	MAX = ErrorLevel(mod.getEnumValue(ctx, "AGMAX"))
-	PREV = ErrorLevel(mod.getEnumValue(ctx, "AGPREV"))
-	// bind ImageType values.
-	IMAGE_TYPE_NULL = ImageType(mod.getEnumValue(ctx, "FT_NULL"))
-	IMAGE_TYPE_BMP = ImageType(mod.getEnumValue(ctx, "FT_BMP"))
-	IMAGE_TYPE_GIF = ImageType(mod.getEnumValue(ctx, "FT_GIF"))
-	IMAGE_TYPE_PNG = ImageType(mod.getEnumValue(ctx, "FT_PNG"))
-	IMAGE_TYPE_JPEG = ImageType(mod.getEnumValue(ctx, "FT_JPEG"))
-	IMAGE_TYPE_PDF = ImageType(mod.getEnumValue(ctx, "FT_PDF"))
-	IMAGE_TYPE_PS = ImageType(mod.getEnumValue(ctx, "FT_PS"))
-	IMAGE_TYPE_EPS = ImageType(mod.getEnumValue(ctx, "FT_EPS"))
-	IMAGE_TYPE_SVG = ImageType(mod.getEnumValue(ctx, "FT_SVG"))
-	IMAGE_TYPE_XML = ImageType(mod.getEnumValue(ctx, "FT_XML"))
-	IMAGE_TYPE_RIFF = ImageType(mod.getEnumValue(ctx, "FT_RIFF"))
-	IMAGE_TYPE_WEBP = ImageType(mod.getEnumValue(ctx, "FT_WEBP"))
-	IMAGE_TYPE_ICO = ImageType(mod.getEnumValue(ctx, "FT_ICO"))
-	IMAGE_TYPE_TIFF = ImageType(mod.getEnumValue(ctx, "FT_TIFF"))
-	// bind ObjectType values.
-	ROOTGRAPH_OBJTYPE = ObjectType(mod.getEnumValue(ctx, "ROOTGRAPH_OBJTYPE"))
-	CLUSTER_OBJTYPE = ObjectType(mod.getEnumValue(ctx, "CLUSTER_OBJTYPE"))
-	NODE_OBJTYPE = ObjectType(mod.getEnumValue(ctx, "NODE_OBJTYPE"))
-	EDGE_OBJTYPE = ObjectType(mod.getEnumValue(ctx, "EDGE_OBJTYPE"))
-	// bind MapShapeType values.
-	MAP_RECTANGLE = MapShapeType(mod.getEnumValue(ctx, "MAP_RECTANGLE"))
-	MAP_CIRCLE = MapShapeType(mod.getEnumValue(ctx, "MAP_CIRCLE"))
-	MAP_POLYGON = MapShapeType(mod.getEnumValue(ctx, "MAP_POLYGON"))
-	// bind EmitState values.
-	EMIT_GDRAW = EmitState(mod.getEnumValue(ctx, "EMIT_GDRAW"))
-	EMIT_CDRAW = EmitState(mod.getEnumValue(ctx, "EMIT_CDRAW"))
-	EMIT_TDRAW = EmitState(mod.getEnumValue(ctx, "EMIT_TDRAW"))
-	EMIT_HDRAW = EmitState(mod.getEnumValue(ctx, "EMIT_HDRAW"))
-	EMIT_GLABEL = EmitState(mod.getEnumValue(ctx, "EMIT_GLABEL"))
-	EMIT_CLABEL = EmitState(mod.getEnumValue(ctx, "EMIT_CLABEL"))
-	EMIT_TLABEL = EmitState(mod.getEnumValue(ctx, "EMIT_TLABEL"))
-	EMIT_HLABEL = EmitState(mod.getEnumValue(ctx, "EMIT_HLABEL"))
-	EMIT_NDRAW = EmitState(mod.getEnumValue(ctx, "EMIT_NDRAW"))
-	EMIT_EDRAW = EmitState(mod.getEnumValue(ctx, "EMIT_EDRAW"))
-	EMIT_NLABEL = EmitState(mod.getEnumValue(ctx, "EMIT_NLABEL"))
-	EMIT_ELABEL = EmitState(mod.getEnumValue(ctx, "EMIT_ELABEL"))
-	// bind EmitType values.
-	EMIT_SORTED = EmitType(mod.getEnumValue(ctx, "EMIT_SORTED"))
-	EMIT_COLORS = EmitType(mod.getEnumValue(ctx, "EMIT_COLORS"))
-	EMIT_CLUSTERS_LAST = EmitType(mod.getEnumValue(ctx, "EMIT_CLUSTERS_LAST"))
-	EMIT_PREORDER = EmitType(mod.getEnumValue(ctx, "EMIT_PREORDER"))
-	EMIT_EDGE_SORTED = EmitType(mod.getEnumValue(ctx, "EMIT_EDGE_SORTED"))
-	// bind DeviceType values.
-	DEVICE_DOES_PAGES = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_DOES_PAGES"))
-	DEVICE_DOES_LAYERS = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_DOES_LAYERS"))
-	DEVICE_EVENTS = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_EVENTS"))
-	DEVICE_DOES_TRUECOLOR = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_DOES_TRUECOLOR"))
-	DEVICE_BINARY_FORMAT = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_BINARY_FORMAT"))
-	DEVICE_COMPRESSED_FORMAT = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_COMPRESSED_FORMAT"))
-	DEVICE_NO_WRITER = DeviceType(mod.getEnumValue(ctx, "GVDEVICE_NO_WRITER"))
-	// bind RenderType values.
-	RENDER_Y_GOES_DOWN = RenderType(mod.getEnumValue(ctx, "GVRENDER_Y_GOES_DOWN"))
-	RENDER_DOES_TRANSFORM = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_TRANSFORM"))
-	RENDER_DOES_LABELS = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_LABELS"))
-	RENDER_DOES_MAPS = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_MAPS"))
-	RENDER_DOES_MAP_RECTANGLE = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_MAP_RECTANGLE"))
-	RENDER_DOES_MAP_CIRCLE = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_MAP_CIRCLE"))
-	RENDER_DOES_MAP_POLYGON = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_MAP_POLYGON"))
-	RENDER_DOES_MAP_ELLIPSE = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_MAP_ELLIPSE"))
-	RENDER_DOES_MAP_BSPLINE = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_MAP_BSPLINE"))
-	RENDER_DOES_TOOLTIPS = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_TOOLTIPS"))
-	RENDER_DOES_TARGETS = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_TARGETS"))
-	RENDER_DOES_Z = RenderType(mod.getEnumValue(ctx, "GVRENDER_DOES_Z"))
-	RENDER_NO_WHITE_BG = RenderType(mod.getEnumValue(ctx, "GVRENDER_NO_WHITE_BG"))
-	// bind RequiredType values.
-	LAYOUT_NOT_REQUIRED = RequiredType(mod.getEnumValue(ctx, "LAYOUT_NOT_REQUIRED"))
-	OUTPUT_NOT_REQUIRED = RequiredType(mod.getEnumValue(ctx, "OUTPUT_NOT_REQUIRED"))
-	// bind PenType values.
-	PEN_NONE = PenType(mod.getEnumValue(ctx, "PEN_NONE"))
-	PEN_DASHED = PenType(mod.getEnumValue(ctx, "PEN_DASHED"))
-	PEN_DOTTED = PenType(mod.getEnumValue(ctx, "PEN_DOTTED"))
-	PEN_SOLID = PenType(mod.getEnumValue(ctx, "PEN_SOLID"))
-	// bind FillType values.
-	FILL_NONE = FillType(mod.getEnumValue(ctx, "FILL_NONE"))
-	FILL_SOLID = FillType(mod.getEnumValue(ctx, "FILL_SOLID"))
-	FILL_LINEAR = FillType(mod.getEnumValue(ctx, "FILL_LINEAR"))
-	FILL_RADIAL = FillType(mod.getEnumValue(ctx, "FILL_RADIAL"))
-	// bind FontType values.
-	FONT_REGULAR = FontType(mod.getEnumValue(ctx, "FONT_REGULAR"))
-	FONT_BOLD = FontType(mod.getEnumValue(ctx, "FONT_BOLD"))
-	FONT_ITALIC = FontType(mod.getEnumValue(ctx, "FONT_ITALIC"))
-	// bind LabelType values.
-	LABEL_PLAIN = LabelType(mod.getEnumValue(ctx, "LABEL_PLAIN"))
-	LABEL_HTML = LabelType(mod.getEnumValue(ctx, "LABEL_HTML"))
-	// bind ColorType values.
-	HSVA_DOUBLE = ColorType(mod.getEnumValue(ctx, "HSVA_DOUBLE"))
-	RGBA_BYTE = ColorType(mod.getEnumValue(ctx, "RGBA_BYTE"))
-	RGBA_WORD = ColorType(mod.getEnumValue(ctx, "RGBA_WORD"))
-	RGBA_DOUBLE = ColorType(mod.getEnumValue(ctx, "RGBA_DOUBLE"))
-	COLOR_STRING = ColorType(mod.getEnumValue(ctx, "COLOR_STRING"))
-	COLOR_INDEX = ColorType(mod.getEnumValue(ctx, "COLOR_INDEX"))
-	// bind API values.
-	API_RENDER = API(mod.getEnumValue(ctx, "API_render"))
-	API_LAYOUT = API(mod.getEnumValue(ctx, "API_layout"))
-	API_TEXTLAYOUT = API(mod.getEnumValue(ctx, "API_textlayout"))
-	API_DEVICE = API(mod.getEnumValue(ctx, "API_device"))
-	API_LOADIMAGE = API(mod.getEnumValue(ctx, "API_loadimage"))
-}
 
-func (m *WasmModule) getEnumValue(ctx context.Context, value string) int {
-	ret, err := mod.ExportedFunction("wasm_bridge_get_" + value).Call(ctx)
-	if err != nil {
-		panic(err)
+	module = New(env, state)
+	module.X_start()
+
+	mod = &WasmModule{
+		module:          module,
+		fs:              fs,
+		lookupFuncMap:   env.lookupFuncMap,
+		callbackFuncMap: env.callbackFuncMap,
 	}
-	return mod.toInt(ret[0])
+	// bind ObjectTag values.
+	GRAPH = ObjectTag(mod.module.Xwasm_bridge_get_AGRAPH())
+	NODE = ObjectTag(mod.module.Xwasm_bridge_get_AGNODE())
+	OUT_EDGE = ObjectTag(mod.module.Xwasm_bridge_get_AGOUTEDGE())
+	IN_EDGE = ObjectTag(mod.module.Xwasm_bridge_get_AGINEDGE())
+	EDGE = ObjectTag(mod.module.Xwasm_bridge_get_AGEDGE())
+	// bind ErrorLevel values.
+	WARN = ErrorLevel(mod.module.Xwasm_bridge_get_AGWARN())
+	ERR = ErrorLevel(mod.module.Xwasm_bridge_get_AGERR())
+	MAX = ErrorLevel(mod.module.Xwasm_bridge_get_AGMAX())
+	PREV = ErrorLevel(mod.module.Xwasm_bridge_get_AGPREV())
+	// bind ImageType values.
+	IMAGE_TYPE_NULL = ImageType(mod.module.Xwasm_bridge_get_FT_NULL())
+	IMAGE_TYPE_BMP = ImageType(mod.module.Xwasm_bridge_get_FT_BMP())
+	IMAGE_TYPE_GIF = ImageType(mod.module.Xwasm_bridge_get_FT_GIF())
+	IMAGE_TYPE_PNG = ImageType(mod.module.Xwasm_bridge_get_FT_PNG())
+	IMAGE_TYPE_JPEG = ImageType(mod.module.Xwasm_bridge_get_FT_JPEG())
+	IMAGE_TYPE_PDF = ImageType(mod.module.Xwasm_bridge_get_FT_PDF())
+	IMAGE_TYPE_PS = ImageType(mod.module.Xwasm_bridge_get_FT_PS())
+	IMAGE_TYPE_EPS = ImageType(mod.module.Xwasm_bridge_get_FT_EPS())
+	IMAGE_TYPE_SVG = ImageType(mod.module.Xwasm_bridge_get_FT_SVG())
+	IMAGE_TYPE_XML = ImageType(mod.module.Xwasm_bridge_get_FT_XML())
+	IMAGE_TYPE_RIFF = ImageType(mod.module.Xwasm_bridge_get_FT_RIFF())
+	IMAGE_TYPE_WEBP = ImageType(mod.module.Xwasm_bridge_get_FT_WEBP())
+	IMAGE_TYPE_ICO = ImageType(mod.module.Xwasm_bridge_get_FT_ICO())
+	IMAGE_TYPE_TIFF = ImageType(mod.module.Xwasm_bridge_get_FT_TIFF())
+	// bind ObjectType values.
+	ROOTGRAPH_OBJTYPE = ObjectType(mod.module.Xwasm_bridge_get_ROOTGRAPH_OBJTYPE())
+	CLUSTER_OBJTYPE = ObjectType(mod.module.Xwasm_bridge_get_CLUSTER_OBJTYPE())
+	NODE_OBJTYPE = ObjectType(mod.module.Xwasm_bridge_get_NODE_OBJTYPE())
+	EDGE_OBJTYPE = ObjectType(mod.module.Xwasm_bridge_get_EDGE_OBJTYPE())
+	// bind MapShapeType values.
+	MAP_RECTANGLE = MapShapeType(mod.module.Xwasm_bridge_get_MAP_RECTANGLE())
+	MAP_CIRCLE = MapShapeType(mod.module.Xwasm_bridge_get_MAP_CIRCLE())
+	MAP_POLYGON = MapShapeType(mod.module.Xwasm_bridge_get_MAP_POLYGON())
+	// bind EmitState values.
+	EMIT_GDRAW = EmitState(mod.module.Xwasm_bridge_get_EMIT_GDRAW())
+	EMIT_CDRAW = EmitState(mod.module.Xwasm_bridge_get_EMIT_CDRAW())
+	EMIT_TDRAW = EmitState(mod.module.Xwasm_bridge_get_EMIT_TDRAW())
+	EMIT_HDRAW = EmitState(mod.module.Xwasm_bridge_get_EMIT_HDRAW())
+	EMIT_GLABEL = EmitState(mod.module.Xwasm_bridge_get_EMIT_GLABEL())
+	EMIT_CLABEL = EmitState(mod.module.Xwasm_bridge_get_EMIT_CLABEL())
+	EMIT_TLABEL = EmitState(mod.module.Xwasm_bridge_get_EMIT_TLABEL())
+	EMIT_HLABEL = EmitState(mod.module.Xwasm_bridge_get_EMIT_HLABEL())
+	EMIT_NDRAW = EmitState(mod.module.Xwasm_bridge_get_EMIT_NDRAW())
+	EMIT_EDRAW = EmitState(mod.module.Xwasm_bridge_get_EMIT_EDRAW())
+	EMIT_NLABEL = EmitState(mod.module.Xwasm_bridge_get_EMIT_NLABEL())
+	EMIT_ELABEL = EmitState(mod.module.Xwasm_bridge_get_EMIT_ELABEL())
+	// bind EmitType values.
+	EMIT_SORTED = EmitType(mod.module.Xwasm_bridge_get_EMIT_SORTED())
+	EMIT_COLORS = EmitType(mod.module.Xwasm_bridge_get_EMIT_COLORS())
+	EMIT_CLUSTERS_LAST = EmitType(mod.module.Xwasm_bridge_get_EMIT_CLUSTERS_LAST())
+	EMIT_PREORDER = EmitType(mod.module.Xwasm_bridge_get_EMIT_PREORDER())
+	EMIT_EDGE_SORTED = EmitType(mod.module.Xwasm_bridge_get_EMIT_EDGE_SORTED())
+	// bind DeviceType values.
+	DEVICE_DOES_PAGES = DeviceType(mod.module.Xwasm_bridge_get_GVDEVICE_DOES_PAGES())
+	DEVICE_DOES_LAYERS = DeviceType(mod.module.Xwasm_bridge_get_GVDEVICE_DOES_LAYERS())
+	DEVICE_EVENTS = DeviceType(mod.module.Xwasm_bridge_get_GVDEVICE_EVENTS())
+	DEVICE_DOES_TRUECOLOR = DeviceType(mod.module.Xwasm_bridge_get_GVDEVICE_DOES_TRUECOLOR())
+	DEVICE_BINARY_FORMAT = DeviceType(mod.module.Xwasm_bridge_get_GVDEVICE_BINARY_FORMAT())
+	DEVICE_COMPRESSED_FORMAT = DeviceType(mod.module.Xwasm_bridge_get_GVDEVICE_COMPRESSED_FORMAT())
+	DEVICE_NO_WRITER = DeviceType(mod.module.Xwasm_bridge_get_GVDEVICE_NO_WRITER())
+	// bind RenderType values.
+	RENDER_Y_GOES_DOWN = RenderType(mod.module.Xwasm_bridge_get_GVRENDER_Y_GOES_DOWN())
+	RENDER_DOES_TRANSFORM = RenderType(mod.module.Xwasm_bridge_get_GVRENDER_DOES_TRANSFORM())
+	RENDER_DOES_LABELS = RenderType(mod.module.Xwasm_bridge_get_GVRENDER_DOES_LABELS())
+	RENDER_DOES_MAPS = RenderType(mod.module.Xwasm_bridge_get_GVRENDER_DOES_MAPS())
+	RENDER_DOES_MAP_RECTANGLE = RenderType(mod.module.Xwasm_bridge_get_GVRENDER_DOES_MAP_RECTANGLE())
+	RENDER_DOES_MAP_CIRCLE = RenderType(mod.module.Xwasm_bridge_get_GVRENDER_DOES_MAP_CIRCLE())
+	RENDER_DOES_MAP_POLYGON = RenderType(mod.module.Xwasm_bridge_get_GVRENDER_DOES_MAP_POLYGON())
+	RENDER_DOES_MAP_ELLIPSE = RenderType(mod.module.Xwasm_bridge_get_GVRENDER_DOES_MAP_ELLIPSE())
+	RENDER_DOES_MAP_BSPLINE = RenderType(mod.module.Xwasm_bridge_get_GVRENDER_DOES_MAP_BSPLINE())
+	RENDER_DOES_TOOLTIPS = RenderType(mod.module.Xwasm_bridge_get_GVRENDER_DOES_TOOLTIPS())
+	RENDER_DOES_TARGETS = RenderType(mod.module.Xwasm_bridge_get_GVRENDER_DOES_TARGETS())
+	RENDER_DOES_Z = RenderType(mod.module.Xwasm_bridge_get_GVRENDER_DOES_Z())
+	RENDER_NO_WHITE_BG = RenderType(mod.module.Xwasm_bridge_get_GVRENDER_NO_WHITE_BG())
+	// bind RequiredType values.
+	LAYOUT_NOT_REQUIRED = RequiredType(mod.module.Xwasm_bridge_get_LAYOUT_NOT_REQUIRED())
+	OUTPUT_NOT_REQUIRED = RequiredType(mod.module.Xwasm_bridge_get_OUTPUT_NOT_REQUIRED())
+	// bind PenType values.
+	PEN_NONE = PenType(mod.module.Xwasm_bridge_get_PEN_NONE())
+	PEN_DASHED = PenType(mod.module.Xwasm_bridge_get_PEN_DASHED())
+	PEN_DOTTED = PenType(mod.module.Xwasm_bridge_get_PEN_DOTTED())
+	PEN_SOLID = PenType(mod.module.Xwasm_bridge_get_PEN_SOLID())
+	// bind FillType values.
+	FILL_NONE = FillType(mod.module.Xwasm_bridge_get_FILL_NONE())
+	FILL_SOLID = FillType(mod.module.Xwasm_bridge_get_FILL_SOLID())
+	FILL_LINEAR = FillType(mod.module.Xwasm_bridge_get_FILL_LINEAR())
+	FILL_RADIAL = FillType(mod.module.Xwasm_bridge_get_FILL_RADIAL())
+	// bind FontType values.
+	FONT_REGULAR = FontType(mod.module.Xwasm_bridge_get_FONT_REGULAR())
+	FONT_BOLD = FontType(mod.module.Xwasm_bridge_get_FONT_BOLD())
+	FONT_ITALIC = FontType(mod.module.Xwasm_bridge_get_FONT_ITALIC())
+	// bind LabelType values.
+	LABEL_PLAIN = LabelType(mod.module.Xwasm_bridge_get_LABEL_PLAIN())
+	LABEL_HTML = LabelType(mod.module.Xwasm_bridge_get_LABEL_HTML())
+	// bind ColorType values.
+	HSVA_DOUBLE = ColorType(mod.module.Xwasm_bridge_get_HSVA_DOUBLE())
+	RGBA_BYTE = ColorType(mod.module.Xwasm_bridge_get_RGBA_BYTE())
+	RGBA_WORD = ColorType(mod.module.Xwasm_bridge_get_RGBA_WORD())
+	RGBA_DOUBLE = ColorType(mod.module.Xwasm_bridge_get_RGBA_DOUBLE())
+	COLOR_STRING = ColorType(mod.module.Xwasm_bridge_get_COLOR_STRING())
+	COLOR_INDEX = ColorType(mod.module.Xwasm_bridge_get_COLOR_INDEX())
+	// bind API values.
+	API_RENDER = API(mod.module.Xwasm_bridge_get_API_render())
+	API_LAYOUT = API(mod.module.Xwasm_bridge_get_API_layout())
+	API_TEXTLAYOUT = API(mod.module.Xwasm_bridge_get_API_textlayout())
+	API_DEVICE = API(mod.module.Xwasm_bridge_get_API_device())
+	API_LOADIMAGE = API(mod.module.Xwasm_bridge_get_API_loadimage())
 }
 
 func WasmPtr(v wasmStruct) uint64 {
 	return v.getPtr()
 }
 
-func getCompilationCache() wazero.CompilationCache {
-	tmpDir := os.TempDir()
-	if tmpDir == "" {
-		return nil
-	}
-	cacheDir := filepath.Join(tmpDir, "go-graphviz")
-	if _, err := os.Stat(cacheDir); err != nil {
-		if err := os.Mkdir(cacheDir, 0o755); err != nil {
-			return nil
-		}
-	}
-	cache, err := wazero.NewCompilationCacheWithDir(cacheDir)
-	if err != nil {
-		return nil
-	}
-	return cache
-}
-
-func (m *WasmModule) ExportedFunction(name string) api.Function {
-	return m.mod.ExportedFunction(name)
-}
-
 func (m *WasmModule) malloc(ctx context.Context, size uint64) (uint64, error) {
-	ret, err := m.ExportedFunction("malloc").Call(ctx, size)
-	if err != nil {
-		return 0, err
-	}
-	return ret[0], nil
+	ret := m.module.Xmalloc(int32(size))
+	return uint64(ret), nil
 }
 
 func (m *WasmModule) free(ctx context.Context, p uint64) error {
-	if _, err := m.ExportedFunction("free").Call(ctx, p); err != nil {
-		return err
-	}
+	m.module.Xfree(int32(p))
 	return nil
 }
 
 func (m *WasmModule) newObject(ctx context.Context, name string) (uint64, error) {
-	ret, err := mod.ExportedFunction("wasm_bridge_new_" + name).Call(ctx)
-	if err != nil {
-		return 0, err
+	method := reflect.ValueOf(m.module).MethodByName("Xwasm_bridge_new_" + name)
+	if !method.IsValid() {
+		return 0, fmt.Errorf("unknown newObject: %s", name)
 	}
-	return ret[0], nil
+	ret := method.Call(nil)
+	return uint64(ret[0].Int()), nil
 }
 
-func (m *WasmModule) setField(ctx context.Context, name string, recv, arg uint64) error {
-	if _, err := mod.ExportedFunction("wasm_bridge_set_"+name).Call(ctx, recv, arg); err != nil {
-		return err
+// zeroGraphTextspanLayout zeros the layout and freefunc fields of every
+// textspan in a graph's primary label. The wasm text layout code leaves
+// these uninitialized for empty lines (leading \n). On a fresh heap they
+// happen to be 0; after reuse they contain stale pointers that crash the
+// wasm freefunc dispatch. This is called from FreeLayout before cleanup.
+func (m *WasmModule) zeroGraphTextspanLayout(graphPtr uint64) {
+	mem := *m.module.Xmemory().Slice()
+	if int(graphPtr)+20 > len(mem) {
+		return
 	}
-	return nil
+	// Graph → data pointer at offset 16 (graph_t.data)
+	dataPtr := uint64(binary.LittleEndian.Uint32(mem[graphPtr+16:]))
+	if dataPtr == 0 || int(dataPtr)+16 > len(mem) {
+		return
+	}
+	// data → label pointer at offset 12 (Agtag_t.label)
+	labelPtr := uint64(binary.LittleEndian.Uint32(mem[dataPtr+12:]))
+	if labelPtr == 0 || int(labelPtr)+84 > len(mem) {
+		return
+	}
+	// Skip HTML labels: offset 82 is html flag (byte)
+	if mem[labelPtr+82] != 0 {
+		return
+	}
+	textspanPtr := uint64(binary.LittleEndian.Uint32(mem[labelPtr+72:]))
+	textspanCount := uint64(binary.LittleEndian.Uint32(mem[labelPtr+76:]))
+	if textspanPtr == 0 || textspanCount == 0 {
+		return
+	}
+	const textspanStride = 56
+	for i := uint64(0); i < textspanCount; i++ {
+		off := textspanPtr + i*textspanStride
+		if int(off)+16 > len(mem) {
+			break
+		}
+		binary.LittleEndian.PutUint32(mem[off+8:], 0)  // layout  = NULL
+		binary.LittleEndian.PutUint32(mem[off+12:], 0) // freefunc = 0
+	}
 }
-
-func (m *WasmModule) setFieldFunction(ctx context.Context, name string, recv uint64) error {
-	if _, err := mod.ExportedFunction("wasm_bridge_set_"+name).Call(ctx, recv); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *WasmModule) getField(ctx context.Context, name string, recv uint64) (ret uint64, e error) {
-	retPtr, err := m.NewPtr(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		e = m.free(ctx, retPtr)
-	}()
-
-	if _, err := m.ExportedFunction("wasm_bridge_get_"+name).Call(ctx, recv, retPtr); err != nil {
-		return 0, err
-	}
-	p, err := m.readU32(retPtr)
-	if err != nil {
-		return 0, err
-	}
-	return p, nil
-}
-
-func (m *WasmModule) call(ctx context.Context, name string, args ...uint64) error {
-	if _, err := mod.ExportedFunction("wasm_bridge_"+name).Call(ctx, args...); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (m *WasmModule) callWithRet(ctx context.Context, name string, args ...uint64) (r uint64, e error) {
-	retPtr, err := m.NewPtr(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		e = m.free(ctx, retPtr)
-	}()
-
-	if err := m.call(ctx, name, append(append([]uint64{}, args...), retPtr)...); err != nil {
-		return 0, err
-	}
-	p, err := m.readU32(retPtr)
-	if err != nil {
-		return 0, err
-	}
-	return p, nil
-}
-
 func (m *WasmModule) read(addr, length uint64) ([]byte, error) {
-	bytes, ok := m.mod.Memory().Read(uint32(addr), uint32(length))
-	if !ok {
+	mem := *m.module.Xmemory().Slice()
+	if int(addr)+int(length) > len(mem) {
 		return nil, fmt.Errorf(
 			`failed to read wasm memory: (ptr, size) = (%d, %d) and memory size is %d`,
-			addr, length, m.mod.Memory().Size(),
+			addr, length, len(mem),
 		)
 	}
-	return bytes, nil
+	return mem[addr : addr+length], nil
 }
 
 func (m *WasmModule) readU32(addr uint64) (uint64, error) {
-	p, ok := m.mod.Memory().ReadUint32Le(uint32(addr))
-	if !ok {
+	mem := *m.module.Xmemory().Slice()
+	if int(addr)+4 > len(mem) {
 		return 0, fmt.Errorf(
 			`failed to read wasm memory: (ptr, size) = (%d, 4) and memory size is %d`,
-			addr, m.mod.Memory().Size(),
+			addr, len(mem),
 		)
 	}
-	return uint64(p), nil
+	return uint64(binary.LittleEndian.Uint32(mem[addr:])), nil
 }
 
 func (m *WasmModule) write(p uint64, b []byte) error {
-	if !m.mod.Memory().Write(uint32(p), b) {
+	mem := *m.module.Xmemory().Slice()
+	if int(p)+len(b) > len(mem) {
 		return fmt.Errorf(
 			`failed to write wasm memory: (ptr, size) = (%d, %d) and memory size is %d`,
-			p, len(b), m.mod.Memory().Size(),
+			p, len(b), len(mem),
 		)
 	}
+	copy(mem[p:], b)
 	return nil
 }
 
 func (m *WasmModule) writeU32(p uint64, v uint32) error {
-	if !m.mod.Memory().WriteUint32Le(uint32(p), v) {
+	mem := *m.module.Xmemory().Slice()
+	if int(p)+4 > len(mem) {
 		return fmt.Errorf(
 			`failed to write wasm memory: ptr = %d and memory size is %d`,
-			p, m.mod.Memory().Size(),
+			p, len(mem),
 		)
 	}
+	binary.LittleEndian.PutUint32(mem[p:], v)
 	return nil
 }
 
 func (m *WasmModule) writeU64(p uint64, v uint64) error {
-	if !m.mod.Memory().WriteUint64Le(uint32(p), v) {
+	mem := *m.module.Xmemory().Slice()
+	if int(p)+8 > len(mem) {
 		return fmt.Errorf(
 			`failed to write wasm memory: ptr = %d and memory size is %d`,
-			p, m.mod.Memory().Size(),
+			p, len(mem),
 		)
 	}
+	binary.LittleEndian.PutUint64(mem[p:], v)
 	return nil
 }
 
 func (m *WasmModule) writeF64(p uint64, v float64) error {
-	if !m.mod.Memory().WriteFloat64Le(uint32(p), v) {
+	mem := *m.module.Xmemory().Slice()
+	if int(p)+8 > len(mem) {
 		return fmt.Errorf(
 			`failed to write wasm memory: ptr = %d and memory size is %d`,
-			p, m.mod.Memory().Size(),
+			p, len(mem),
 		)
 	}
+	binary.LittleEndian.PutUint64(mem[p:], math.Float64bits(v))
 	return nil
 }
 
@@ -3387,71 +3002,71 @@ type numberType interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
 }
 
-func (m *WasmModule) toIntWasmValue(_ context.Context, v any) (uint64, error) {
+func (m *WasmModule) toIntWasmValue(_ context.Context, v any) (int32, error) {
 	switch vv := v.(type) {
 	case int:
-		return uint64(vv), nil
+		return int32(vv), nil
 	case int8:
-		return uint64(vv), nil
+		return int32(vv), nil
 	case int16:
-		return uint64(vv), nil
+		return int32(vv), nil
 	case int32:
-		return uint64(vv), nil
+		return vv, nil
 	case int64:
-		return uint64(vv), nil
+		return int32(vv), nil
 	}
-	return uint64(reflect.ValueOf(v).Int()), nil
+	return int32(reflect.ValueOf(v).Int()), nil
 }
 
-func (m *WasmModule) toInt32WasmValue(_ context.Context, v int32) (uint64, error) {
-	return uint64(v), nil
+func (m *WasmModule) toInt32WasmValue(_ context.Context, v int32) (int32, error) {
+	return v, nil
 }
 
-func (m *WasmModule) toInt64WasmValue(_ context.Context, v int64) (uint64, error) {
-	return uint64(v), nil
+func (m *WasmModule) toInt64WasmValue(_ context.Context, v int64) (int64, error) {
+	return v, nil
 }
 
-func (m *WasmModule) toUintWasmValue(_ context.Context, v any) (uint64, error) {
+func (m *WasmModule) toUintWasmValue(_ context.Context, v any) (uint32, error) {
 	switch vv := v.(type) {
 	case uint:
-		return uint64(vv), nil
+		return uint32(vv), nil
 	case uint8:
-		return uint64(vv), nil
+		return uint32(vv), nil
 	case uint16:
-		return uint64(vv), nil
+		return uint32(vv), nil
 	case uint32:
-		return uint64(vv), nil
-	case uint64:
 		return vv, nil
+	case uint64:
+		return uint32(vv), nil
 	}
 	return 0, nil
 }
 
-func (m *WasmModule) toUint32WasmValue(_ context.Context, v uint32) (uint64, error) {
-	return uint64(v), nil
+func (m *WasmModule) toUint32WasmValue(_ context.Context, v uint32) (uint32, error) {
+	return v, nil
 }
 
 func (m *WasmModule) toUint64WasmValue(_ context.Context, v uint64) (uint64, error) {
 	return v, nil
 }
 
-func (m *WasmModule) toBoolWasmValue(_ context.Context, v bool) (uint64, error) {
+func (m *WasmModule) toBoolWasmValue(_ context.Context, v bool) (int32, error) {
 	if v {
 		return 1, nil
 	}
 	return 0, nil
 }
 
-func (m *WasmModule) toFuncWasmValue(_ context.Context, _ any) (uint64, error) {
+func (m *WasmModule) toFuncWasmValue(_ context.Context, _ any) (int32, error) {
 	return 0, nil
 }
 
-func (m *WasmModule) toFloatWasmValue(_ context.Context, v float32) (uint64, error) {
-	return api.EncodeF32(v), nil
+func (m *WasmModule) toFloatWasmValue(_ context.Context, v float32) (float32, error) {
+	return v, nil
 }
 
-func (m *WasmModule) toDoubleWasmValue(_ context.Context, v float64) (uint64, error) {
-	return api.EncodeF64(v), nil
+func (m *WasmModule) toDoubleWasmValue(_ context.Context, v float64) (float64, error) {
+	return v, nil
 }
 
 func (m *WasmModule) toIntArrayWasmValue(ctx context.Context, v []int) (uint64, error) {
@@ -3686,7 +3301,8 @@ func (v *Record) SetName(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Record_name", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Record_name(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Record) GetName() string {
@@ -3699,7 +3315,13 @@ func (v *Record) GetName() string {
 
 func (v *Record) getName(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Record_name", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Record_name(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -3716,7 +3338,8 @@ func (v *Record) SetNext(_arg *Record) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Record_next", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Record_next(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Record) GetNext() *Record {
@@ -3729,7 +3352,13 @@ func (v *Record) GetNext() *Record {
 
 func (v *Record) getNext(ctx context.Context) (*Record, error) {
 	var zero *Record
-	p, err := mod.getField(ctx, "Record_next", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Record_next(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -3776,7 +3405,8 @@ func (v *Tag) SetObjectType(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Tag_object_type", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Tag_object_type(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Tag) GetObjectType() uint32 {
@@ -3789,7 +3419,13 @@ func (v *Tag) GetObjectType() uint32 {
 
 func (v *Tag) getObjectType(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "Tag_object_type", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Tag_object_type(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -3803,7 +3439,8 @@ func (v *Tag) SetMtflock(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Tag_mtflock", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Tag_mtflock(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Tag) GetMtflock() uint32 {
@@ -3816,7 +3453,13 @@ func (v *Tag) GetMtflock() uint32 {
 
 func (v *Tag) getMtflock(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "Tag_mtflock", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Tag_mtflock(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -3830,7 +3473,8 @@ func (v *Tag) SetAttrwf(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Tag_attrwf", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Tag_attrwf(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Tag) GetAttrwf() uint32 {
@@ -3843,7 +3487,13 @@ func (v *Tag) GetAttrwf() uint32 {
 
 func (v *Tag) getAttrwf(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "Tag_attrwf", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Tag_attrwf(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -3857,7 +3507,8 @@ func (v *Tag) SetSeq(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Tag_seq", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Tag_seq(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Tag) GetSeq() uint32 {
@@ -3870,7 +3521,13 @@ func (v *Tag) GetSeq() uint32 {
 
 func (v *Tag) getSeq(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "Tag_seq", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Tag_seq(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -3884,7 +3541,8 @@ func (v *Tag) SetId(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Tag_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Tag_id(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Tag) GetId() uint64 {
@@ -3897,7 +3555,13 @@ func (v *Tag) GetId() uint64 {
 
 func (v *Tag) getId(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "Tag_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Tag_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -3944,7 +3608,8 @@ func (v *Object) SetTag(_arg *Tag) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Object_tag", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Object_tag(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Object) GetTag() *Tag {
@@ -3957,7 +3622,13 @@ func (v *Object) GetTag() *Tag {
 
 func (v *Object) getTag(ctx context.Context) (*Tag, error) {
 	var zero *Tag
-	p, err := mod.getField(ctx, "Object_tag", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Object_tag(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -3971,7 +3642,8 @@ func (v *Object) SetData(_arg *Record) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Object_data", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Object_data(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Object) GetData() *Record {
@@ -3984,7 +3656,13 @@ func (v *Object) GetData() *Record {
 
 func (v *Object) getData(ctx context.Context) (*Record, error) {
 	var zero *Record
-	p, err := mod.getField(ctx, "Object_data", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Object_data(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4031,7 +3709,8 @@ func (v *SubNode) SetSeqLink(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "SubNode_seq_link", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_SubNode_seq_link(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *SubNode) GetSeqLink() *DictLink {
@@ -4044,7 +3723,13 @@ func (v *SubNode) GetSeqLink() *DictLink {
 
 func (v *SubNode) getSeqLink(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "SubNode_seq_link", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_SubNode_seq_link(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4058,7 +3743,8 @@ func (v *SubNode) SetIdLink(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "SubNode_id_link", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_SubNode_id_link(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *SubNode) GetIdLink() *DictLink {
@@ -4071,7 +3757,13 @@ func (v *SubNode) GetIdLink() *DictLink {
 
 func (v *SubNode) getIdLink(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "SubNode_id_link", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_SubNode_id_link(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4085,7 +3777,8 @@ func (v *SubNode) SetNode(_arg *Node) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "SubNode_node", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_SubNode_node(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *SubNode) GetNode() *Node {
@@ -4098,7 +3791,13 @@ func (v *SubNode) GetNode() *Node {
 
 func (v *SubNode) getNode(ctx context.Context) (*Node, error) {
 	var zero *Node
-	p, err := mod.getField(ctx, "SubNode_node", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_SubNode_node(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4112,7 +3811,8 @@ func (v *SubNode) SetInId(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "SubNode_in_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_SubNode_in_id(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *SubNode) GetInId() *DictLink {
@@ -4125,7 +3825,13 @@ func (v *SubNode) GetInId() *DictLink {
 
 func (v *SubNode) getInId(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "SubNode_in_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_SubNode_in_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4139,7 +3845,8 @@ func (v *SubNode) SetOutId(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "SubNode_out_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_SubNode_out_id(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *SubNode) GetOutId() *DictLink {
@@ -4152,7 +3859,13 @@ func (v *SubNode) GetOutId() *DictLink {
 
 func (v *SubNode) getOutId(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "SubNode_out_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_SubNode_out_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4166,7 +3879,8 @@ func (v *SubNode) SetInSeq(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "SubNode_in_seq", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_SubNode_in_seq(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *SubNode) GetInSeq() *DictLink {
@@ -4179,7 +3893,13 @@ func (v *SubNode) GetInSeq() *DictLink {
 
 func (v *SubNode) getInSeq(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "SubNode_in_seq", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_SubNode_in_seq(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4193,7 +3913,8 @@ func (v *SubNode) SetOutSeq(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "SubNode_out_seq", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_SubNode_out_seq(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *SubNode) GetOutSeq() *DictLink {
@@ -4206,7 +3927,13 @@ func (v *SubNode) GetOutSeq() *DictLink {
 
 func (v *SubNode) getOutSeq(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "SubNode_out_seq", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_SubNode_out_seq(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4253,7 +3980,8 @@ func (v *Node) SetBase(_arg *Object) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Node_base", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Node_base(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Node) GetBase() *Object {
@@ -4266,7 +3994,13 @@ func (v *Node) GetBase() *Object {
 
 func (v *Node) getBase(ctx context.Context) (*Object, error) {
 	var zero *Object
-	p, err := mod.getField(ctx, "Node_base", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Node_base(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4280,7 +4014,8 @@ func (v *Node) SetRoot(_arg *Graph) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Node_root", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Node_root(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Node) GetRoot() *Graph {
@@ -4293,7 +4028,13 @@ func (v *Node) GetRoot() *Graph {
 
 func (v *Node) getRoot(ctx context.Context) (*Graph, error) {
 	var zero *Graph
-	p, err := mod.getField(ctx, "Node_root", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Node_root(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4307,7 +4048,8 @@ func (v *Node) SetMainsub(_arg *SubNode) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Node_mainsub", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Node_mainsub(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Node) GetMainsub() *SubNode {
@@ -4320,7 +4062,13 @@ func (v *Node) GetMainsub() *SubNode {
 
 func (v *Node) getMainsub(ctx context.Context) (*SubNode, error) {
 	var zero *SubNode
-	p, err := mod.getField(ctx, "Node_mainsub", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Node_mainsub(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4367,7 +4115,8 @@ func (v *Edge) SetBase(_arg *Object) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Edge_base", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Edge_base(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Edge) GetBase() *Object {
@@ -4380,7 +4129,13 @@ func (v *Edge) GetBase() *Object {
 
 func (v *Edge) getBase(ctx context.Context) (*Object, error) {
 	var zero *Object
-	p, err := mod.getField(ctx, "Edge_base", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Edge_base(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4394,7 +4149,8 @@ func (v *Edge) SetIdLink(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Edge_id_link", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Edge_id_link(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Edge) GetIdLink() *DictLink {
@@ -4407,7 +4163,13 @@ func (v *Edge) GetIdLink() *DictLink {
 
 func (v *Edge) getIdLink(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "Edge_id_link", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Edge_id_link(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4421,7 +4183,8 @@ func (v *Edge) SetSeqLink(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Edge_seq_link", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Edge_seq_link(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Edge) GetSeqLink() *DictLink {
@@ -4434,7 +4197,13 @@ func (v *Edge) GetSeqLink() *DictLink {
 
 func (v *Edge) getSeqLink(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "Edge_seq_link", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Edge_seq_link(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4448,7 +4217,8 @@ func (v *Edge) SetNode(_arg *Node) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Edge_node", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Edge_node(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Edge) GetNode() *Node {
@@ -4461,7 +4231,13 @@ func (v *Edge) GetNode() *Node {
 
 func (v *Edge) getNode(ctx context.Context) (*Node, error) {
 	var zero *Node
-	p, err := mod.getField(ctx, "Edge_node", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Edge_node(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4508,7 +4284,8 @@ func (v *EdgePair) SetOut(_arg *Edge) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "EdgePair_out", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_EdgePair_out(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *EdgePair) GetOut() *Edge {
@@ -4521,7 +4298,13 @@ func (v *EdgePair) GetOut() *Edge {
 
 func (v *EdgePair) getOut(ctx context.Context) (*Edge, error) {
 	var zero *Edge
-	p, err := mod.getField(ctx, "EdgePair_out", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_EdgePair_out(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4535,7 +4318,8 @@ func (v *EdgePair) SetIn(_arg *Edge) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "EdgePair_in", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_EdgePair_in(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *EdgePair) GetIn() *Edge {
@@ -4548,7 +4332,13 @@ func (v *EdgePair) GetIn() *Edge {
 
 func (v *EdgePair) getIn(ctx context.Context) (*Edge, error) {
 	var zero *Edge
-	p, err := mod.getField(ctx, "EdgePair_in", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_EdgePair_in(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4595,7 +4385,8 @@ func (v *GraphDescriptor) SetDirected(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "GraphDescriptor_directed", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_GraphDescriptor_directed(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *GraphDescriptor) GetDirected() uint32 {
@@ -4608,7 +4399,13 @@ func (v *GraphDescriptor) GetDirected() uint32 {
 
 func (v *GraphDescriptor) getDirected(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "GraphDescriptor_directed", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_GraphDescriptor_directed(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4622,7 +4419,8 @@ func (v *GraphDescriptor) SetStrict(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "GraphDescriptor_strict", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_GraphDescriptor_strict(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *GraphDescriptor) GetStrict() uint32 {
@@ -4635,7 +4433,13 @@ func (v *GraphDescriptor) GetStrict() uint32 {
 
 func (v *GraphDescriptor) getStrict(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "GraphDescriptor_strict", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_GraphDescriptor_strict(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4649,7 +4453,8 @@ func (v *GraphDescriptor) SetNoLoop(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "GraphDescriptor_no_loop", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_GraphDescriptor_no_loop(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *GraphDescriptor) GetNoLoop() uint32 {
@@ -4662,7 +4467,13 @@ func (v *GraphDescriptor) GetNoLoop() uint32 {
 
 func (v *GraphDescriptor) getNoLoop(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "GraphDescriptor_no_loop", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_GraphDescriptor_no_loop(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4676,7 +4487,8 @@ func (v *GraphDescriptor) SetMaingraph(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "GraphDescriptor_maingraph", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_GraphDescriptor_maingraph(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *GraphDescriptor) GetMaingraph() uint32 {
@@ -4689,7 +4501,13 @@ func (v *GraphDescriptor) GetMaingraph() uint32 {
 
 func (v *GraphDescriptor) getMaingraph(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "GraphDescriptor_maingraph", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_GraphDescriptor_maingraph(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4703,7 +4521,8 @@ func (v *GraphDescriptor) SetNoWrite(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "GraphDescriptor_no_write", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_GraphDescriptor_no_write(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *GraphDescriptor) GetNoWrite() uint32 {
@@ -4716,7 +4535,13 @@ func (v *GraphDescriptor) GetNoWrite() uint32 {
 
 func (v *GraphDescriptor) getNoWrite(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "GraphDescriptor_no_write", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_GraphDescriptor_no_write(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4730,7 +4555,8 @@ func (v *GraphDescriptor) SetHasAttrs(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "GraphDescriptor_has_attrs", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_GraphDescriptor_has_attrs(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *GraphDescriptor) GetHasAttrs() uint32 {
@@ -4743,7 +4569,13 @@ func (v *GraphDescriptor) GetHasAttrs() uint32 {
 
 func (v *GraphDescriptor) getHasAttrs(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "GraphDescriptor_has_attrs", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_GraphDescriptor_has_attrs(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4757,7 +4589,8 @@ func (v *GraphDescriptor) SetHasCmpnd(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "GraphDescriptor_has_cmpnd", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_GraphDescriptor_has_cmpnd(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *GraphDescriptor) GetHasCmpnd() uint32 {
@@ -4770,7 +4603,13 @@ func (v *GraphDescriptor) GetHasCmpnd() uint32 {
 
 func (v *GraphDescriptor) getHasCmpnd(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "GraphDescriptor_has_cmpnd", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_GraphDescriptor_has_cmpnd(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4816,7 +4655,8 @@ func (v *IDAllocator) SetOpen(ctx context.Context, arg *CallbackFunc[func(contex
 		return fmt.Errorf("cannot find lookup function. you must call Register_IDAllocator_Open before")
 	}
 	mod.callbackFuncMap.IDAllocator_Open[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "IDAllocator_open", v.getPtr())
+	mod.module.Xwasm_bridge_set_IDAllocator_open(int32(v.getPtr()))
+	return nil
 }
 
 func (v *IDAllocator) SetMap(ctx context.Context, arg *CallbackFunc[func(context.Context, any, int, string, *uint64, int) (int32, error)]) error {
@@ -4824,7 +4664,8 @@ func (v *IDAllocator) SetMap(ctx context.Context, arg *CallbackFunc[func(context
 		return fmt.Errorf("cannot find lookup function. you must call Register_IDAllocator_Map before")
 	}
 	mod.callbackFuncMap.IDAllocator_Map[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "IDAllocator_map", v.getPtr())
+	mod.module.Xwasm_bridge_set_IDAllocator_map(int32(v.getPtr()))
+	return nil
 }
 
 func (v *IDAllocator) SetAlloc(ctx context.Context, arg *CallbackFunc[func(context.Context, any, int, uint64) (int32, error)]) error {
@@ -4832,7 +4673,8 @@ func (v *IDAllocator) SetAlloc(ctx context.Context, arg *CallbackFunc[func(conte
 		return fmt.Errorf("cannot find lookup function. you must call Register_IDAllocator_Alloc before")
 	}
 	mod.callbackFuncMap.IDAllocator_Alloc[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "IDAllocator_alloc", v.getPtr())
+	mod.module.Xwasm_bridge_set_IDAllocator_alloc(int32(v.getPtr()))
+	return nil
 }
 
 func (v *IDAllocator) SetFree(ctx context.Context, arg *CallbackFunc[func(context.Context, any, int, uint64) error]) error {
@@ -4840,7 +4682,8 @@ func (v *IDAllocator) SetFree(ctx context.Context, arg *CallbackFunc[func(contex
 		return fmt.Errorf("cannot find lookup function. you must call Register_IDAllocator_Free before")
 	}
 	mod.callbackFuncMap.IDAllocator_Free[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "IDAllocator_free", v.getPtr())
+	mod.module.Xwasm_bridge_set_IDAllocator_free(int32(v.getPtr()))
+	return nil
 }
 
 func (v *IDAllocator) SetPrint(ctx context.Context, arg *CallbackFunc[func(context.Context, any, int, uint64) (string, error)]) error {
@@ -4848,7 +4691,8 @@ func (v *IDAllocator) SetPrint(ctx context.Context, arg *CallbackFunc[func(conte
 		return fmt.Errorf("cannot find lookup function. you must call Register_IDAllocator_Print before")
 	}
 	mod.callbackFuncMap.IDAllocator_Print[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "IDAllocator_print", v.getPtr())
+	mod.module.Xwasm_bridge_set_IDAllocator_print(int32(v.getPtr()))
+	return nil
 }
 
 func (v *IDAllocator) SetClose(ctx context.Context, arg *CallbackFunc[func(context.Context, any) error]) error {
@@ -4856,7 +4700,8 @@ func (v *IDAllocator) SetClose(ctx context.Context, arg *CallbackFunc[func(conte
 		return fmt.Errorf("cannot find lookup function. you must call Register_IDAllocator_Close before")
 	}
 	mod.callbackFuncMap.IDAllocator_Close[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "IDAllocator_close", v.getPtr())
+	mod.module.Xwasm_bridge_set_IDAllocator_close(int32(v.getPtr()))
+	return nil
 }
 
 func (v *IDAllocator) SetIdregister(ctx context.Context, arg *CallbackFunc[func(context.Context, any, int, any) error]) error {
@@ -4864,7 +4709,8 @@ func (v *IDAllocator) SetIdregister(ctx context.Context, arg *CallbackFunc[func(
 		return fmt.Errorf("cannot find lookup function. you must call Register_IDAllocator_IdRegister before")
 	}
 	mod.callbackFuncMap.IDAllocator_IdRegister[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "IDAllocator_idregister", v.getPtr())
+	mod.module.Xwasm_bridge_set_IDAllocator_idregister(int32(v.getPtr()))
+	return nil
 }
 
 type IOService struct {
@@ -4905,7 +4751,8 @@ func (v *IOService) SetAfread(ctx context.Context, arg *CallbackFunc[func(contex
 		return fmt.Errorf("cannot find lookup function. you must call Register_IOService_Afread before")
 	}
 	mod.callbackFuncMap.IOService_Afread[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "IOService_afread", v.getPtr())
+	mod.module.Xwasm_bridge_set_IOService_afread(int32(v.getPtr()))
+	return nil
 }
 
 func (v *IOService) SetPutstr(ctx context.Context, arg *CallbackFunc[func(context.Context, any, string) (int, error)]) error {
@@ -4913,7 +4760,8 @@ func (v *IOService) SetPutstr(ctx context.Context, arg *CallbackFunc[func(contex
 		return fmt.Errorf("cannot find lookup function. you must call Register_IOService_Putstr before")
 	}
 	mod.callbackFuncMap.IOService_Putstr[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "IOService_putstr", v.getPtr())
+	mod.module.Xwasm_bridge_set_IOService_putstr(int32(v.getPtr()))
+	return nil
 }
 
 func (v *IOService) SetFlush(ctx context.Context, arg *CallbackFunc[func(context.Context, any) (int, error)]) error {
@@ -4921,7 +4769,8 @@ func (v *IOService) SetFlush(ctx context.Context, arg *CallbackFunc[func(context
 		return fmt.Errorf("cannot find lookup function. you must call Register_IOService_Flush before")
 	}
 	mod.callbackFuncMap.IOService_Flush[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "IOService_flush", v.getPtr())
+	mod.module.Xwasm_bridge_set_IOService_flush(int32(v.getPtr()))
+	return nil
 }
 
 type ClientDiscipline struct {
@@ -4963,7 +4812,8 @@ func (v *ClientDiscipline) SetId(_arg *IDAllocator) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ClientDiscipline_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ClientDiscipline_id(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ClientDiscipline) GetId() *IDAllocator {
@@ -4976,7 +4826,13 @@ func (v *ClientDiscipline) GetId() *IDAllocator {
 
 func (v *ClientDiscipline) getId(ctx context.Context) (*IDAllocator, error) {
 	var zero *IDAllocator
-	p, err := mod.getField(ctx, "ClientDiscipline_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ClientDiscipline_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -4990,7 +4846,8 @@ func (v *ClientDiscipline) SetIo(_arg *IOService) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ClientDiscipline_io", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ClientDiscipline_io(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ClientDiscipline) GetIo() *IOService {
@@ -5003,7 +4860,13 @@ func (v *ClientDiscipline) GetIo() *IOService {
 
 func (v *ClientDiscipline) getIo(ctx context.Context) (*IOService, error) {
 	var zero *IOService
-	p, err := mod.getField(ctx, "ClientDiscipline_io", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ClientDiscipline_io(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5050,7 +4913,8 @@ func (v *State) SetId(_arg any) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "State_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_State_id(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *State) GetId() any {
@@ -5063,7 +4927,13 @@ func (v *State) GetId() any {
 
 func (v *State) getId(ctx context.Context) (any, error) {
 	var zero any
-	p, err := mod.getField(ctx, "State_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_State_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5144,7 +5014,8 @@ func (v *CallbackStack) SetF(_arg *ClientEventCallback) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "CallbackStack_f", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_CallbackStack_f(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *CallbackStack) GetF() *ClientEventCallback {
@@ -5157,7 +5028,13 @@ func (v *CallbackStack) GetF() *ClientEventCallback {
 
 func (v *CallbackStack) getF(ctx context.Context) (*ClientEventCallback, error) {
 	var zero *ClientEventCallback
-	p, err := mod.getField(ctx, "CallbackStack_f", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_CallbackStack_f(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5171,7 +5048,8 @@ func (v *CallbackStack) SetState(_arg any) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "CallbackStack_state", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_CallbackStack_state(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *CallbackStack) GetState() any {
@@ -5184,7 +5062,13 @@ func (v *CallbackStack) GetState() any {
 
 func (v *CallbackStack) getState(ctx context.Context) (any, error) {
 	var zero any
-	p, err := mod.getField(ctx, "CallbackStack_state", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_CallbackStack_state(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5198,7 +5082,8 @@ func (v *CallbackStack) SetPrev(_arg *CallbackStack) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "CallbackStack_prev", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_CallbackStack_prev(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *CallbackStack) GetPrev() *CallbackStack {
@@ -5211,7 +5096,13 @@ func (v *CallbackStack) GetPrev() *CallbackStack {
 
 func (v *CallbackStack) getPrev(ctx context.Context) (*CallbackStack, error) {
 	var zero *CallbackStack
-	p, err := mod.getField(ctx, "CallbackStack_prev", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_CallbackStack_prev(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5258,7 +5149,8 @@ func (v *CommonFields) SetDisc(_arg *ClientDiscipline) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "CommonFields_disc", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_CommonFields_disc(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *CommonFields) GetDisc() *ClientDiscipline {
@@ -5271,7 +5163,13 @@ func (v *CommonFields) GetDisc() *ClientDiscipline {
 
 func (v *CommonFields) getDisc(ctx context.Context) (*ClientDiscipline, error) {
 	var zero *ClientDiscipline
-	p, err := mod.getField(ctx, "CommonFields_disc", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_CommonFields_disc(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5285,7 +5183,8 @@ func (v *CommonFields) SetState(_arg *State) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "CommonFields_state", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_CommonFields_state(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *CommonFields) GetState() *State {
@@ -5298,7 +5197,13 @@ func (v *CommonFields) GetState() *State {
 
 func (v *CommonFields) getState(ctx context.Context) (*State, error) {
 	var zero *State
-	p, err := mod.getField(ctx, "CommonFields_state", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_CommonFields_state(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5312,7 +5217,8 @@ func (v *CommonFields) SetStrdict(_arg *Dict) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "CommonFields_strdict", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_CommonFields_strdict(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *CommonFields) GetStrdict() *Dict {
@@ -5325,7 +5231,13 @@ func (v *CommonFields) GetStrdict() *Dict {
 
 func (v *CommonFields) getStrdict(ctx context.Context) (*Dict, error) {
 	var zero *Dict
-	p, err := mod.getField(ctx, "CommonFields_strdict", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_CommonFields_strdict(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5339,7 +5251,8 @@ func (v *CommonFields) SetSeq(_arg []uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "CommonFields_seq", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_CommonFields_seq(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *CommonFields) GetSeq() []uint64 {
@@ -5352,7 +5265,13 @@ func (v *CommonFields) GetSeq() []uint64 {
 
 func (v *CommonFields) getSeq(ctx context.Context) ([]uint64, error) {
 	var zero []uint64
-	p, err := mod.getField(ctx, "CommonFields_seq", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_CommonFields_seq(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5370,7 +5289,8 @@ func (v *CommonFields) SetCb(_arg *CallbackStack) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "CommonFields_cb", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_CommonFields_cb(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *CommonFields) GetCb() *CallbackStack {
@@ -5383,7 +5303,13 @@ func (v *CommonFields) GetCb() *CallbackStack {
 
 func (v *CommonFields) getCb(ctx context.Context) (*CallbackStack, error) {
 	var zero *CallbackStack
-	p, err := mod.getField(ctx, "CommonFields_cb", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_CommonFields_cb(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5397,7 +5323,8 @@ func (v *CommonFields) SetLookupByName(_arg []*Dict) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "CommonFields_lookup_by_name", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_CommonFields_lookup_by_name(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *CommonFields) GetLookupByName() []*Dict {
@@ -5410,7 +5337,13 @@ func (v *CommonFields) GetLookupByName() []*Dict {
 
 func (v *CommonFields) getLookupByName(ctx context.Context) ([]*Dict, error) {
 	var zero []*Dict
-	p, err := mod.getField(ctx, "CommonFields_lookup_by_name", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_CommonFields_lookup_by_name(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5428,7 +5361,8 @@ func (v *CommonFields) SetLookupById(_arg []*Dict) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "CommonFields_lookup_by_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_CommonFields_lookup_by_id(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *CommonFields) GetLookupById() []*Dict {
@@ -5441,7 +5375,13 @@ func (v *CommonFields) GetLookupById() []*Dict {
 
 func (v *CommonFields) getLookupById(ctx context.Context) ([]*Dict, error) {
 	var zero []*Dict
-	p, err := mod.getField(ctx, "CommonFields_lookup_by_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_CommonFields_lookup_by_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5492,7 +5432,8 @@ func (v *Graph) SetBase(_arg *Object) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Graph_base", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Graph_base(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Graph) GetBase() *Object {
@@ -5505,7 +5446,13 @@ func (v *Graph) GetBase() *Object {
 
 func (v *Graph) getBase(ctx context.Context) (*Object, error) {
 	var zero *Object
-	p, err := mod.getField(ctx, "Graph_base", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Graph_base(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5519,7 +5466,8 @@ func (v *Graph) SetDesc(_arg *GraphDescriptor) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Graph_desc", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Graph_desc(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Graph) GetDesc() *GraphDescriptor {
@@ -5532,7 +5480,13 @@ func (v *Graph) GetDesc() *GraphDescriptor {
 
 func (v *Graph) getDesc(ctx context.Context) (*GraphDescriptor, error) {
 	var zero *GraphDescriptor
-	p, err := mod.getField(ctx, "Graph_desc", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Graph_desc(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5546,7 +5500,8 @@ func (v *Graph) SetSeqLink(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Graph_seq_link", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Graph_seq_link(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Graph) GetSeqLink() *DictLink {
@@ -5559,7 +5514,13 @@ func (v *Graph) GetSeqLink() *DictLink {
 
 func (v *Graph) getSeqLink(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "Graph_seq_link", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Graph_seq_link(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5573,7 +5534,8 @@ func (v *Graph) SetIdLink(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Graph_id_link", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Graph_id_link(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Graph) GetIdLink() *DictLink {
@@ -5586,7 +5548,13 @@ func (v *Graph) GetIdLink() *DictLink {
 
 func (v *Graph) getIdLink(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "Graph_id_link", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Graph_id_link(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5600,7 +5568,8 @@ func (v *Graph) SetNSeq(_arg *Dict) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Graph_n_seq", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Graph_n_seq(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Graph) GetNSeq() *Dict {
@@ -5613,7 +5582,13 @@ func (v *Graph) GetNSeq() *Dict {
 
 func (v *Graph) getNSeq(ctx context.Context) (*Dict, error) {
 	var zero *Dict
-	p, err := mod.getField(ctx, "Graph_n_seq", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Graph_n_seq(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5627,7 +5602,8 @@ func (v *Graph) SetESeq(_arg *Dict) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Graph_e_seq", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Graph_e_seq(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Graph) GetESeq() *Dict {
@@ -5640,7 +5616,13 @@ func (v *Graph) GetESeq() *Dict {
 
 func (v *Graph) getESeq(ctx context.Context) (*Dict, error) {
 	var zero *Dict
-	p, err := mod.getField(ctx, "Graph_e_seq", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Graph_e_seq(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5654,7 +5636,8 @@ func (v *Graph) SetEId(_arg *Dict) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Graph_e_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Graph_e_id(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Graph) GetEId() *Dict {
@@ -5667,7 +5650,13 @@ func (v *Graph) GetEId() *Dict {
 
 func (v *Graph) getEId(ctx context.Context) (*Dict, error) {
 	var zero *Dict
-	p, err := mod.getField(ctx, "Graph_e_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Graph_e_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5681,7 +5670,8 @@ func (v *Graph) SetGSeq(_arg *Dict) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Graph_g_seq", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Graph_g_seq(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Graph) GetGSeq() *Dict {
@@ -5694,7 +5684,13 @@ func (v *Graph) GetGSeq() *Dict {
 
 func (v *Graph) getGSeq(ctx context.Context) (*Dict, error) {
 	var zero *Dict
-	p, err := mod.getField(ctx, "Graph_g_seq", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Graph_g_seq(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5708,7 +5704,8 @@ func (v *Graph) SetGId(_arg *Dict) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Graph_g_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Graph_g_id(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Graph) GetGId() *Dict {
@@ -5721,7 +5718,13 @@ func (v *Graph) GetGId() *Dict {
 
 func (v *Graph) getGId(ctx context.Context) (*Dict, error) {
 	var zero *Dict
-	p, err := mod.getField(ctx, "Graph_g_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Graph_g_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5735,7 +5738,8 @@ func (v *Graph) SetParent(_arg *Graph) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Graph_parent", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Graph_parent(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Graph) GetParent() *Graph {
@@ -5748,7 +5752,13 @@ func (v *Graph) GetParent() *Graph {
 
 func (v *Graph) getParent(ctx context.Context) (*Graph, error) {
 	var zero *Graph
-	p, err := mod.getField(ctx, "Graph_parent", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Graph_parent(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5762,7 +5772,8 @@ func (v *Graph) SetRoot(_arg *Graph) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Graph_root", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Graph_root(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Graph) GetRoot() *Graph {
@@ -5775,7 +5786,13 @@ func (v *Graph) GetRoot() *Graph {
 
 func (v *Graph) getRoot(ctx context.Context) (*Graph, error) {
 	var zero *Graph
-	p, err := mod.getField(ctx, "Graph_root", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Graph_root(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5789,7 +5806,8 @@ func (v *Graph) SetClos(_arg *CommonFields) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Graph_clos", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Graph_clos(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Graph) GetClos() *CommonFields {
@@ -5802,7 +5820,13 @@ func (v *Graph) GetClos() *CommonFields {
 
 func (v *Graph) getClos(ctx context.Context) (*CommonFields, error) {
 	var zero *CommonFields
-	p, err := mod.getField(ctx, "Graph_clos", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Graph_clos(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5849,7 +5873,8 @@ func (v *Attr) SetH(_arg *Record) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Attr_h", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Attr_h(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Attr) GetH() *Record {
@@ -5862,7 +5887,13 @@ func (v *Attr) GetH() *Record {
 
 func (v *Attr) getH(ctx context.Context) (*Record, error) {
 	var zero *Record
-	p, err := mod.getField(ctx, "Attr_h", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Attr_h(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5876,7 +5907,8 @@ func (v *Attr) SetDict(_arg *Dict) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Attr_dict", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Attr_dict(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Attr) GetDict() *Dict {
@@ -5889,7 +5921,13 @@ func (v *Attr) GetDict() *Dict {
 
 func (v *Attr) getDict(ctx context.Context) (*Dict, error) {
 	var zero *Dict
-	p, err := mod.getField(ctx, "Attr_dict", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Attr_dict(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5903,7 +5941,8 @@ func (v *Attr) SetStr(_arg []string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Attr_str", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Attr_str(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Attr) GetStr() []string {
@@ -5916,7 +5955,13 @@ func (v *Attr) GetStr() []string {
 
 func (v *Attr) getStr(ctx context.Context) ([]string, error) {
 	var zero []string
-	p, err := mod.getField(ctx, "Attr_str", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Attr_str(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5970,7 +6015,8 @@ func (v *Sym) SetLink(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Sym_link", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Sym_link(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Sym) GetLink() *DictLink {
@@ -5983,7 +6029,13 @@ func (v *Sym) GetLink() *DictLink {
 
 func (v *Sym) getLink(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "Sym_link", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Sym_link(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -5997,7 +6049,8 @@ func (v *Sym) SetName(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Sym_name", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Sym_name(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Sym) GetName() string {
@@ -6010,7 +6063,13 @@ func (v *Sym) GetName() string {
 
 func (v *Sym) getName(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Sym_name", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Sym_name(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6027,7 +6086,8 @@ func (v *Sym) SetDefval(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Sym_defval", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Sym_defval(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Sym) GetDefval() string {
@@ -6040,7 +6100,13 @@ func (v *Sym) GetDefval() string {
 
 func (v *Sym) getDefval(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Sym_defval", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Sym_defval(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6057,7 +6123,8 @@ func (v *Sym) SetId(_arg int32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Sym_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Sym_id(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Sym) GetId() int32 {
@@ -6070,7 +6137,13 @@ func (v *Sym) GetId() int32 {
 
 func (v *Sym) getId(ctx context.Context) (int32, error) {
 	var zero int32
-	p, err := mod.getField(ctx, "Sym_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Sym_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6084,7 +6157,8 @@ func (v *Sym) SetKind(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Sym_kind", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Sym_kind(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Sym) GetKind() uint32 {
@@ -6097,7 +6171,13 @@ func (v *Sym) GetKind() uint32 {
 
 func (v *Sym) getKind(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "Sym_kind", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Sym_kind(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6111,7 +6191,8 @@ func (v *Sym) SetFixed(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Sym_fixed", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Sym_fixed(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Sym) GetFixed() uint32 {
@@ -6124,7 +6205,13 @@ func (v *Sym) GetFixed() uint32 {
 
 func (v *Sym) getFixed(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "Sym_fixed", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Sym_fixed(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6138,7 +6225,8 @@ func (v *Sym) SetPrint(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Sym_print", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Sym_print(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Sym) GetPrint() uint32 {
@@ -6151,7 +6239,13 @@ func (v *Sym) GetPrint() uint32 {
 
 func (v *Sym) getPrint(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "Sym_print", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Sym_print(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6198,7 +6292,8 @@ func (v *DataDict) SetH(_arg *Record) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DataDict_h", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DataDict_h(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *DataDict) GetH() *Record {
@@ -6211,7 +6306,13 @@ func (v *DataDict) GetH() *Record {
 
 func (v *DataDict) getH(ctx context.Context) (*Record, error) {
 	var zero *Record
-	p, err := mod.getField(ctx, "DataDict_h", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DataDict_h(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6258,7 +6359,8 @@ func (v *DictLink) SetRight(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictLink_right", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictLink_right(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *DictLink) GetRight() *DictLink {
@@ -6271,7 +6373,13 @@ func (v *DictLink) GetRight() *DictLink {
 
 func (v *DictLink) getRight(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "DictLink_right", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictLink_right(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6285,7 +6393,8 @@ func (v *DictLink) SetHash(_arg uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictLink_hash", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictLink_hash(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *DictLink) GetHash() uint32 {
@@ -6298,7 +6407,13 @@ func (v *DictLink) GetHash() uint32 {
 
 func (v *DictLink) getHash(ctx context.Context) (uint32, error) {
 	var zero uint32
-	p, err := mod.getField(ctx, "DictLink_hash", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictLink_hash(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6312,7 +6427,8 @@ func (v *DictLink) SetLeft(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictLink_left", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictLink_left(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *DictLink) GetLeft() *DictLink {
@@ -6325,7 +6441,13 @@ func (v *DictLink) GetLeft() *DictLink {
 
 func (v *DictLink) getLeft(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "DictLink_left", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictLink_left(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6372,7 +6494,8 @@ func (v *DictHold) SetHdr(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictHold_hdr", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictHold_hdr(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *DictHold) GetHdr() *DictLink {
@@ -6385,7 +6508,13 @@ func (v *DictHold) GetHdr() *DictLink {
 
 func (v *DictHold) getHdr(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "DictHold_hdr", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictHold_hdr(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6399,7 +6528,8 @@ func (v *DictHold) SetObj(_arg any) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictHold_obj", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictHold_obj(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *DictHold) GetObj() any {
@@ -6412,7 +6542,13 @@ func (v *DictHold) GetObj() any {
 
 func (v *DictHold) getObj(ctx context.Context) (any, error) {
 	var zero any
-	p, err := mod.getField(ctx, "DictHold_obj", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictHold_obj(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6458,7 +6594,8 @@ func (v *DictMethod) SetSearchf(ctx context.Context, arg *CallbackFunc[func(cont
 		return fmt.Errorf("cannot find lookup function. you must call Register_DictSearch before")
 	}
 	mod.callbackFuncMap.DictSearch[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DictMethod_searchf", v.getPtr())
+	mod.module.Xwasm_bridge_set_DictMethod_searchf(int32(v.getPtr()))
+	return nil
 }
 
 func (v *DictMethod) SetType(_arg int64) error {
@@ -6467,7 +6604,8 @@ func (v *DictMethod) SetType(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictMethod_type", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictMethod_type(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *DictMethod) GetType() int64 {
@@ -6480,7 +6618,13 @@ func (v *DictMethod) GetType() int64 {
 
 func (v *DictMethod) getType(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "DictMethod_type", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictMethod_type(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6527,7 +6671,8 @@ func (v *DictData) SetType(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictData_type", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictData_type(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *DictData) GetType() int64 {
@@ -6540,7 +6685,13 @@ func (v *DictData) GetType() int64 {
 
 func (v *DictData) getType(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "DictData_type", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictData_type(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6554,7 +6705,8 @@ func (v *DictData) SetHere(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictData_here", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictData_here(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *DictData) GetHere() *DictLink {
@@ -6567,7 +6719,13 @@ func (v *DictData) GetHere() *DictLink {
 
 func (v *DictData) getHere(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "DictData_here", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictData_here(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6581,7 +6739,8 @@ func (v *DictData) SetHtab(_arg []*DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictData_htab", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictData_htab(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *DictData) GetHtab() []*DictLink {
@@ -6594,7 +6753,13 @@ func (v *DictData) GetHtab() []*DictLink {
 
 func (v *DictData) getHtab(ctx context.Context) ([]*DictLink, error) {
 	var zero []*DictLink
-	p, err := mod.getField(ctx, "DictData_htab", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictData_htab(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6612,7 +6777,8 @@ func (v *DictData) SetHead(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictData_head", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictData_head(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *DictData) GetHead() *DictLink {
@@ -6625,7 +6791,13 @@ func (v *DictData) GetHead() *DictLink {
 
 func (v *DictData) getHead(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "DictData_head", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictData_head(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6639,7 +6811,8 @@ func (v *DictData) SetNtab(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictData_ntab", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictData_ntab(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *DictData) GetNtab() int64 {
@@ -6652,7 +6825,13 @@ func (v *DictData) GetNtab() int64 {
 
 func (v *DictData) getNtab(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "DictData_ntab", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictData_ntab(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6666,7 +6845,8 @@ func (v *DictData) SetSize(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictData_size", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictData_size(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *DictData) GetSize() int64 {
@@ -6679,7 +6859,13 @@ func (v *DictData) GetSize() int64 {
 
 func (v *DictData) getSize(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "DictData_size", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictData_size(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6693,7 +6879,8 @@ func (v *DictData) SetLoop(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictData_loop", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictData_loop(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *DictData) GetLoop() int64 {
@@ -6706,7 +6893,13 @@ func (v *DictData) GetLoop() int64 {
 
 func (v *DictData) getLoop(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "DictData_loop", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictData_loop(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6753,7 +6946,8 @@ func (v *DictDisc) SetKey(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictDisc_key", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictDisc_key(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *DictDisc) GetKey() int64 {
@@ -6766,7 +6960,13 @@ func (v *DictDisc) GetKey() int64 {
 
 func (v *DictDisc) getKey(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "DictDisc_key", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictDisc_key(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6780,7 +6980,8 @@ func (v *DictDisc) SetSize(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictDisc_size", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictDisc_size(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *DictDisc) GetSize() int64 {
@@ -6793,7 +6994,13 @@ func (v *DictDisc) GetSize() int64 {
 
 func (v *DictDisc) getSize(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "DictDisc_size", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictDisc_size(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6807,7 +7014,8 @@ func (v *DictDisc) SetLink(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictDisc_link", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictDisc_link(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *DictDisc) GetLink() int64 {
@@ -6820,7 +7028,13 @@ func (v *DictDisc) GetLink() int64 {
 
 func (v *DictDisc) getLink(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "DictDisc_link", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictDisc_link(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6833,7 +7047,8 @@ func (v *DictDisc) SetMakef(ctx context.Context, arg *CallbackFunc[func(context.
 		return fmt.Errorf("cannot find lookup function. you must call Register_DictMake before")
 	}
 	mod.callbackFuncMap.DictMake[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DictDisc_makef", v.getPtr())
+	mod.module.Xwasm_bridge_set_DictDisc_makef(int32(v.getPtr()))
+	return nil
 }
 
 func (v *DictDisc) SetFreef(ctx context.Context, arg *CallbackFunc[func(context.Context, any) error]) error {
@@ -6841,7 +7056,8 @@ func (v *DictDisc) SetFreef(ctx context.Context, arg *CallbackFunc[func(context.
 		return fmt.Errorf("cannot find lookup function. you must call Register_DictFree before")
 	}
 	mod.callbackFuncMap.DictFree[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DictDisc_freef", v.getPtr())
+	mod.module.Xwasm_bridge_set_DictDisc_freef(int32(v.getPtr()))
+	return nil
 }
 
 func (v *DictDisc) SetComparf(ctx context.Context, arg *CallbackFunc[func(context.Context, any, any) (int, error)]) error {
@@ -6849,7 +7065,8 @@ func (v *DictDisc) SetComparf(ctx context.Context, arg *CallbackFunc[func(contex
 		return fmt.Errorf("cannot find lookup function. you must call Register_DictCompare before")
 	}
 	mod.callbackFuncMap.DictCompare[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DictDisc_comparf", v.getPtr())
+	mod.module.Xwasm_bridge_set_DictDisc_comparf(int32(v.getPtr()))
+	return nil
 }
 
 type Dict struct {
@@ -6890,7 +7107,8 @@ func (v *Dict) SetSearchf(ctx context.Context, arg *CallbackFunc[func(context.Co
 		return fmt.Errorf("cannot find lookup function. you must call Register_DictSearch before")
 	}
 	mod.callbackFuncMap.DictSearch[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "Dict_searchf", v.getPtr())
+	mod.module.Xwasm_bridge_set_Dict_searchf(int32(v.getPtr()))
+	return nil
 }
 
 func (v *Dict) SetDisc(_arg *DictDisc) error {
@@ -6899,7 +7117,8 @@ func (v *Dict) SetDisc(_arg *DictDisc) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Dict_disc", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Dict_disc(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Dict) GetDisc() *DictDisc {
@@ -6912,7 +7131,13 @@ func (v *Dict) GetDisc() *DictDisc {
 
 func (v *Dict) getDisc(ctx context.Context) (*DictDisc, error) {
 	var zero *DictDisc
-	p, err := mod.getField(ctx, "Dict_disc", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Dict_disc(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6926,7 +7151,8 @@ func (v *Dict) SetData(_arg *DictData) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Dict_data", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Dict_data(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Dict) GetData() *DictData {
@@ -6939,7 +7165,13 @@ func (v *Dict) GetData() *DictData {
 
 func (v *Dict) getData(ctx context.Context) (*DictData, error) {
 	var zero *DictData
-	p, err := mod.getField(ctx, "Dict_data", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Dict_data(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6953,7 +7185,8 @@ func (v *Dict) SetMeth(_arg *DictMethod) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Dict_meth", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Dict_meth(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Dict) GetMeth() *DictMethod {
@@ -6966,7 +7199,13 @@ func (v *Dict) GetMeth() *DictMethod {
 
 func (v *Dict) getMeth(ctx context.Context) (*DictMethod, error) {
 	var zero *DictMethod
-	p, err := mod.getField(ctx, "Dict_meth", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Dict_meth(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -6980,7 +7219,8 @@ func (v *Dict) SetNview(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Dict_nview", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Dict_nview(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Dict) GetNview() int64 {
@@ -6993,7 +7233,13 @@ func (v *Dict) GetNview() int64 {
 
 func (v *Dict) getNview(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Dict_nview", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Dict_nview(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7007,7 +7253,8 @@ func (v *Dict) SetView(_arg *Dict) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Dict_view", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Dict_view(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Dict) GetView() *Dict {
@@ -7020,7 +7267,13 @@ func (v *Dict) GetView() *Dict {
 
 func (v *Dict) getView(ctx context.Context) (*Dict, error) {
 	var zero *Dict
-	p, err := mod.getField(ctx, "Dict_view", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Dict_view(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7034,7 +7287,8 @@ func (v *Dict) SetWalk(_arg *Dict) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Dict_walk", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Dict_walk(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Dict) GetWalk() *Dict {
@@ -7047,7 +7301,13 @@ func (v *Dict) GetWalk() *Dict {
 
 func (v *Dict) getWalk(ctx context.Context) (*Dict, error) {
 	var zero *Dict
-	p, err := mod.getField(ctx, "Dict_walk", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Dict_walk(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7061,7 +7321,8 @@ func (v *Dict) SetUser(_arg any) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Dict_user", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Dict_user(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Dict) GetUser() any {
@@ -7074,7 +7335,13 @@ func (v *Dict) GetUser() any {
 
 func (v *Dict) getUser(ctx context.Context) (any, error) {
 	var zero any
-	p, err := mod.getField(ctx, "Dict_user", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Dict_user(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7121,7 +7388,8 @@ func (v *DictStat) SetDtMeth(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictStat_dt_meth", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictStat_dt_meth(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *DictStat) GetDtMeth() int64 {
@@ -7134,7 +7402,13 @@ func (v *DictStat) GetDtMeth() int64 {
 
 func (v *DictStat) getDtMeth(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "DictStat_dt_meth", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictStat_dt_meth(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7148,7 +7422,8 @@ func (v *DictStat) SetDtSize(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictStat_dt_size", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictStat_dt_size(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *DictStat) GetDtSize() int64 {
@@ -7161,7 +7436,13 @@ func (v *DictStat) GetDtSize() int64 {
 
 func (v *DictStat) getDtSize(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "DictStat_dt_size", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictStat_dt_size(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7175,7 +7456,8 @@ func (v *DictStat) SetDtN(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictStat_dt_n", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictStat_dt_n(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *DictStat) GetDtN() uint64 {
@@ -7188,7 +7470,13 @@ func (v *DictStat) GetDtN() uint64 {
 
 func (v *DictStat) getDtN(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "DictStat_dt_n", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictStat_dt_n(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7202,7 +7490,8 @@ func (v *DictStat) SetDtMax(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictStat_dt_max", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictStat_dt_max(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *DictStat) GetDtMax() uint64 {
@@ -7215,7 +7504,13 @@ func (v *DictStat) GetDtMax() uint64 {
 
 func (v *DictStat) getDtMax(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "DictStat_dt_max", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictStat_dt_max(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7229,7 +7524,8 @@ func (v *DictStat) SetDtCount(_arg []uint32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DictStat_dt_count", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DictStat_dt_count(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *DictStat) GetDtCount() []uint32 {
@@ -7242,7 +7538,13 @@ func (v *DictStat) GetDtCount() []uint32 {
 
 func (v *DictStat) getDtCount(ctx context.Context) ([]uint32, error) {
 	var zero []uint32
-	p, err := mod.getField(ctx, "DictStat_dt_count", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DictStat_dt_count(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7319,7 +7621,8 @@ func (v *Context) SetCommon(_arg *Common) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Context_common", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Context_common(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Context) GetCommon() *Common {
@@ -7332,7 +7635,13 @@ func (v *Context) GetCommon() *Common {
 
 func (v *Context) getCommon(ctx context.Context) (*Common, error) {
 	var zero *Common
-	p, err := mod.getField(ctx, "Context_common", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Context_common(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7346,7 +7655,8 @@ func (v *Context) SetConfigPath(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Context_config_path", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Context_config_path(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Context) GetConfigPath() string {
@@ -7359,7 +7669,13 @@ func (v *Context) GetConfigPath() string {
 
 func (v *Context) getConfigPath(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Context_config_path", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Context_config_path(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7376,7 +7692,8 @@ func (v *Context) SetConfigFound(_arg bool) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Context_config_found", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Context_config_found(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Context) GetConfigFound() bool {
@@ -7389,7 +7706,13 @@ func (v *Context) GetConfigFound() bool {
 
 func (v *Context) getConfigFound(ctx context.Context) (bool, error) {
 	var zero bool
-	p, err := mod.getField(ctx, "Context_config_found", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Context_config_found(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7403,7 +7726,8 @@ func (v *Context) SetInputFilenames(_arg []string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Context_input_filenames", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Context_input_filenames(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Context) GetInputFilenames() []string {
@@ -7416,7 +7740,13 @@ func (v *Context) GetInputFilenames() []string {
 
 func (v *Context) getInputFilenames(ctx context.Context) ([]string, error) {
 	var zero []string
-	p, err := mod.getField(ctx, "Context_input_filenames", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Context_input_filenames(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7437,7 +7767,8 @@ func (v *Context) SetApis(_arg []*PluginAvailable) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Context_apis", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Context_apis(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Context) GetApis() []*PluginAvailable {
@@ -7450,7 +7781,13 @@ func (v *Context) GetApis() []*PluginAvailable {
 
 func (v *Context) getApis(ctx context.Context) ([]*PluginAvailable, error) {
 	var zero []*PluginAvailable
-	p, err := mod.getField(ctx, "Context_apis", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Context_apis(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7468,7 +7805,8 @@ func (v *Context) SetApi(_arg []*PluginAvailable) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Context_api", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Context_api(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Context) GetApi() []*PluginAvailable {
@@ -7481,7 +7819,13 @@ func (v *Context) GetApi() []*PluginAvailable {
 
 func (v *Context) getApi(ctx context.Context) ([]*PluginAvailable, error) {
 	var zero []*PluginAvailable
-	p, err := mod.getField(ctx, "Context_api", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Context_api(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7532,7 +7876,8 @@ func (v *PluginAvailable) SetNext(_arg *PluginAvailable) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginAvailable_next", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginAvailable_next(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginAvailable) GetNext() *PluginAvailable {
@@ -7545,7 +7890,13 @@ func (v *PluginAvailable) GetNext() *PluginAvailable {
 
 func (v *PluginAvailable) getNext(ctx context.Context) (*PluginAvailable, error) {
 	var zero *PluginAvailable
-	p, err := mod.getField(ctx, "PluginAvailable_next", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginAvailable_next(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7559,7 +7910,8 @@ func (v *PluginAvailable) SetTypestr(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginAvailable_typestr", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginAvailable_typestr(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginAvailable) GetTypestr() string {
@@ -7572,7 +7924,13 @@ func (v *PluginAvailable) GetTypestr() string {
 
 func (v *PluginAvailable) getTypestr(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PluginAvailable_typestr", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginAvailable_typestr(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7589,7 +7947,8 @@ func (v *PluginAvailable) SetQuality(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginAvailable_quality", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginAvailable_quality(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *PluginAvailable) GetQuality() int64 {
@@ -7602,7 +7961,13 @@ func (v *PluginAvailable) GetQuality() int64 {
 
 func (v *PluginAvailable) getQuality(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "PluginAvailable_quality", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginAvailable_quality(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7616,7 +7981,8 @@ func (v *PluginAvailable) SetPackage(_arg *PluginPackage) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginAvailable_package", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginAvailable_package(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginAvailable) GetPackage() *PluginPackage {
@@ -7629,7 +7995,13 @@ func (v *PluginAvailable) GetPackage() *PluginPackage {
 
 func (v *PluginAvailable) getPackage(ctx context.Context) (*PluginPackage, error) {
 	var zero *PluginPackage
-	p, err := mod.getField(ctx, "PluginAvailable_package", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginAvailable_package(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7643,7 +8015,8 @@ func (v *PluginAvailable) SetTypeptr(_arg *PluginInstalled) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginAvailable_typeptr", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginAvailable_typeptr(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginAvailable) GetTypeptr() *PluginInstalled {
@@ -7656,7 +8029,13 @@ func (v *PluginAvailable) GetTypeptr() *PluginInstalled {
 
 func (v *PluginAvailable) getTypeptr(ctx context.Context) (*PluginInstalled, error) {
 	var zero *PluginInstalled
-	p, err := mod.getField(ctx, "PluginAvailable_typeptr", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginAvailable_typeptr(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7703,7 +8082,8 @@ func (v *PluginPackage) SetNext(_arg *PluginPackage) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginPackage_next", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginPackage_next(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginPackage) GetNext() *PluginPackage {
@@ -7716,7 +8096,13 @@ func (v *PluginPackage) GetNext() *PluginPackage {
 
 func (v *PluginPackage) getNext(ctx context.Context) (*PluginPackage, error) {
 	var zero *PluginPackage
-	p, err := mod.getField(ctx, "PluginPackage_next", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginPackage_next(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7730,7 +8116,8 @@ func (v *PluginPackage) SetPath(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginPackage_path", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginPackage_path(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginPackage) GetPath() string {
@@ -7743,7 +8130,13 @@ func (v *PluginPackage) GetPath() string {
 
 func (v *PluginPackage) getPath(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PluginPackage_path", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginPackage_path(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7760,7 +8153,8 @@ func (v *PluginPackage) SetName(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginPackage_name", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginPackage_name(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginPackage) GetName() string {
@@ -7773,7 +8167,13 @@ func (v *PluginPackage) GetName() string {
 
 func (v *PluginPackage) getName(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PluginPackage_name", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginPackage_name(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7823,7 +8223,8 @@ func (v *SymList) SetName(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "SymList_name", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_SymList_name(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *SymList) GetName() string {
@@ -7836,7 +8237,13 @@ func (v *SymList) GetName() string {
 
 func (v *SymList) getName(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "SymList_name", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_SymList_name(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7853,7 +8260,8 @@ func (v *SymList) SetAddress(_arg *PluginLibrary) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "SymList_address", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_SymList_address(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *SymList) GetAddress() *PluginLibrary {
@@ -7866,7 +8274,13 @@ func (v *SymList) GetAddress() *PluginLibrary {
 
 func (v *SymList) getAddress(ctx context.Context) (*PluginLibrary, error) {
 	var zero *PluginLibrary
-	p, err := mod.getField(ctx, "SymList_address", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_SymList_address(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7913,7 +8327,8 @@ func (v *UserShape) SetLink(_arg *DictLink) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_link", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_link(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *UserShape) GetLink() *DictLink {
@@ -7926,7 +8341,13 @@ func (v *UserShape) GetLink() *DictLink {
 
 func (v *UserShape) getLink(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.getField(ctx, "UserShape_link", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_link(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7940,7 +8361,8 @@ func (v *UserShape) SetName(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_name", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_name(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *UserShape) GetName() string {
@@ -7953,7 +8375,13 @@ func (v *UserShape) GetName() string {
 
 func (v *UserShape) getName(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "UserShape_name", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_name(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7970,7 +8398,8 @@ func (v *UserShape) SetMacroId(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_macro_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_macro_id(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *UserShape) GetMacroId() int64 {
@@ -7983,7 +8412,13 @@ func (v *UserShape) GetMacroId() int64 {
 
 func (v *UserShape) getMacroId(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "UserShape_macro_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_macro_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -7997,7 +8432,8 @@ func (v *UserShape) SetMustInline(_arg bool) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_must_inline", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_must_inline(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *UserShape) GetMustInline() bool {
@@ -8010,7 +8446,13 @@ func (v *UserShape) GetMustInline() bool {
 
 func (v *UserShape) getMustInline(ctx context.Context) (bool, error) {
 	var zero bool
-	p, err := mod.getField(ctx, "UserShape_must_inline", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_must_inline(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8024,7 +8466,8 @@ func (v *UserShape) SetNocache(_arg bool) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_nocache", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_nocache(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *UserShape) GetNocache() bool {
@@ -8037,7 +8480,13 @@ func (v *UserShape) GetNocache() bool {
 
 func (v *UserShape) getNocache(ctx context.Context) (bool, error) {
 	var zero bool
-	p, err := mod.getField(ctx, "UserShape_nocache", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_nocache(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8051,7 +8500,8 @@ func (v *UserShape) SetF(_arg *File) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_f", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_f(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *UserShape) GetF() *File {
@@ -8064,7 +8514,13 @@ func (v *UserShape) GetF() *File {
 
 func (v *UserShape) getF(ctx context.Context) (*File, error) {
 	var zero *File
-	p, err := mod.getField(ctx, "UserShape_f", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_f(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8078,7 +8534,8 @@ func (v *UserShape) SetType(_arg ImageType) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_type", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_type(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *UserShape) GetType() ImageType {
@@ -8091,7 +8548,13 @@ func (v *UserShape) GetType() ImageType {
 
 func (v *UserShape) getType(ctx context.Context) (ImageType, error) {
 	var zero ImageType
-	p, err := mod.getField(ctx, "UserShape_type", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_type(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8105,7 +8568,8 @@ func (v *UserShape) SetStringtype(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_stringtype", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_stringtype(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *UserShape) GetStringtype() string {
@@ -8118,7 +8582,13 @@ func (v *UserShape) GetStringtype() string {
 
 func (v *UserShape) getStringtype(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "UserShape_stringtype", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_stringtype(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8135,7 +8605,8 @@ func (v *UserShape) SetX(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_x", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_x(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *UserShape) GetX() int64 {
@@ -8148,7 +8619,13 @@ func (v *UserShape) GetX() int64 {
 
 func (v *UserShape) getX(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "UserShape_x", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_x(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8162,7 +8639,8 @@ func (v *UserShape) SetY(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_y", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_y(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *UserShape) GetY() int64 {
@@ -8175,7 +8653,13 @@ func (v *UserShape) GetY() int64 {
 
 func (v *UserShape) getY(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "UserShape_y", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_y(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8189,7 +8673,8 @@ func (v *UserShape) SetW(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_w", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_w(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *UserShape) GetW() int64 {
@@ -8202,7 +8687,13 @@ func (v *UserShape) GetW() int64 {
 
 func (v *UserShape) getW(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "UserShape_w", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_w(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8216,7 +8707,8 @@ func (v *UserShape) SetH(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_h", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_h(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *UserShape) GetH() int64 {
@@ -8229,7 +8721,13 @@ func (v *UserShape) GetH() int64 {
 
 func (v *UserShape) getH(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "UserShape_h", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_h(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8243,7 +8741,8 @@ func (v *UserShape) SetDpi(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_dpi", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_dpi(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *UserShape) GetDpi() int64 {
@@ -8256,7 +8755,13 @@ func (v *UserShape) GetDpi() int64 {
 
 func (v *UserShape) getDpi(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "UserShape_dpi", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_dpi(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8270,7 +8775,8 @@ func (v *UserShape) SetData(_arg any) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_data", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_data(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *UserShape) GetData() any {
@@ -8283,7 +8789,13 @@ func (v *UserShape) GetData() any {
 
 func (v *UserShape) getData(ctx context.Context) (any, error) {
 	var zero any
-	p, err := mod.getField(ctx, "UserShape_data", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_data(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8297,7 +8809,8 @@ func (v *UserShape) SetDatasize(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "UserShape_datasize", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_UserShape_datasize(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *UserShape) GetDatasize() uint64 {
@@ -8310,7 +8823,13 @@ func (v *UserShape) GetDatasize() uint64 {
 
 func (v *UserShape) getDatasize(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "UserShape_datasize", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_UserShape_datasize(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8323,7 +8842,8 @@ func (v *UserShape) SetDatafree(ctx context.Context, arg *CallbackFunc[func(cont
 		return fmt.Errorf("cannot find lookup function. you must call Register_UserShape_DataFree before")
 	}
 	mod.callbackFuncMap.UserShape_DataFree[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "UserShape_datafree", v.getPtr())
+	mod.module.Xwasm_bridge_set_UserShape_datafree(int32(v.getPtr()))
+	return nil
 }
 
 type PluginActiveLoadImage struct {
@@ -8365,7 +8885,8 @@ func (v *PluginActiveLoadImage) SetEngine(_arg *LoadImageEngine) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginActiveLoadImage_engine", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginActiveLoadImage_engine(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginActiveLoadImage) GetEngine() *LoadImageEngine {
@@ -8378,7 +8899,13 @@ func (v *PluginActiveLoadImage) GetEngine() *LoadImageEngine {
 
 func (v *PluginActiveLoadImage) getEngine(ctx context.Context) (*LoadImageEngine, error) {
 	var zero *LoadImageEngine
-	p, err := mod.getField(ctx, "PluginActiveLoadImage_engine", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginActiveLoadImage_engine(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8392,7 +8919,8 @@ func (v *PluginActiveLoadImage) SetId(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginActiveLoadImage_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginActiveLoadImage_id(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *PluginActiveLoadImage) GetId() int64 {
@@ -8405,7 +8933,13 @@ func (v *PluginActiveLoadImage) GetId() int64 {
 
 func (v *PluginActiveLoadImage) getId(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "PluginActiveLoadImage_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginActiveLoadImage_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8419,7 +8953,8 @@ func (v *PluginActiveLoadImage) SetType(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginActiveLoadImage_type", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginActiveLoadImage_type(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginActiveLoadImage) GetType() string {
@@ -8432,7 +8967,13 @@ func (v *PluginActiveLoadImage) GetType() string {
 
 func (v *PluginActiveLoadImage) getType(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PluginActiveLoadImage_type", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginActiveLoadImage_type(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8482,7 +9023,8 @@ func (v *Common) SetInfo(_arg []string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Common_info", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Common_info(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Common) GetInfo() []string {
@@ -8495,7 +9037,13 @@ func (v *Common) GetInfo() []string {
 
 func (v *Common) getInfo(ctx context.Context) ([]string, error) {
 	var zero []string
-	p, err := mod.getField(ctx, "Common_info", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Common_info(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8516,7 +9064,8 @@ func (v *Common) SetCmdname(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Common_cmdname", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Common_cmdname(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Common) GetCmdname() string {
@@ -8529,7 +9078,13 @@ func (v *Common) GetCmdname() string {
 
 func (v *Common) getCmdname(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Common_cmdname", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Common_cmdname(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8546,7 +9101,8 @@ func (v *Common) SetVerbose(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Common_verbose", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Common_verbose(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Common) GetVerbose() int64 {
@@ -8559,7 +9115,13 @@ func (v *Common) GetVerbose() int64 {
 
 func (v *Common) getVerbose(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Common_verbose", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Common_verbose(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8573,7 +9135,8 @@ func (v *Common) SetConfig(_arg bool) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Common_config", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Common_config(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Common) GetConfig() bool {
@@ -8586,7 +9149,13 @@ func (v *Common) GetConfig() bool {
 
 func (v *Common) getConfig(ctx context.Context) (bool, error) {
 	var zero bool
-	p, err := mod.getField(ctx, "Common_config", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Common_config(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8600,7 +9169,8 @@ func (v *Common) SetAutoOutfileNames(_arg bool) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Common_auto_outfile_names", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Common_auto_outfile_names(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Common) GetAutoOutfileNames() bool {
@@ -8613,7 +9183,13 @@ func (v *Common) GetAutoOutfileNames() bool {
 
 func (v *Common) getAutoOutfileNames(ctx context.Context) (bool, error) {
 	var zero bool
-	p, err := mod.getField(ctx, "Common_auto_outfile_names", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Common_auto_outfile_names(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8627,7 +9203,8 @@ func (v *Common) SetShowBoxes(_arg []string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Common_show_boxes", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Common_show_boxes(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Common) GetShowBoxes() []string {
@@ -8640,7 +9217,13 @@ func (v *Common) GetShowBoxes() []string {
 
 func (v *Common) getShowBoxes(ctx context.Context) ([]string, error) {
 	var zero []string
-	p, err := mod.getField(ctx, "Common_show_boxes", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Common_show_boxes(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8661,7 +9244,8 @@ func (v *Common) SetLib(_arg []string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Common_lib", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Common_lib(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Common) GetLib() []string {
@@ -8674,7 +9258,13 @@ func (v *Common) GetLib() []string {
 
 func (v *Common) getLib(ctx context.Context) ([]string, error) {
 	var zero []string
-	p, err := mod.getField(ctx, "Common_lib", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Common_lib(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8695,7 +9285,8 @@ func (v *Common) SetViewNum(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Common_view_num", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Common_view_num(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Common) GetViewNum() int64 {
@@ -8708,7 +9299,13 @@ func (v *Common) GetViewNum() int64 {
 
 func (v *Common) getViewNum(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Common_view_num", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Common_view_num(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8722,7 +9319,8 @@ func (v *Common) SetBuiltins(_arg *SymList) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Common_builtins", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Common_builtins(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Common) GetBuiltins() *SymList {
@@ -8735,7 +9333,13 @@ func (v *Common) GetBuiltins() *SymList {
 
 func (v *Common) getBuiltins(ctx context.Context) (*SymList, error) {
 	var zero *SymList
-	p, err := mod.getField(ctx, "Common_builtins", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Common_builtins(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8749,7 +9353,8 @@ func (v *Common) SetDemandLoading(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Common_demand_loading", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Common_demand_loading(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Common) GetDemandLoading() int64 {
@@ -8762,7 +9367,13 @@ func (v *Common) GetDemandLoading() int64 {
 
 func (v *Common) getDemandLoading(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Common_demand_loading", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Common_demand_loading(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8809,7 +9420,8 @@ func (v *ObjectState) SetParent(_arg *ObjectState) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_parent", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_parent(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetParent() *ObjectState {
@@ -8822,7 +9434,13 @@ func (v *ObjectState) GetParent() *ObjectState {
 
 func (v *ObjectState) getParent(ctx context.Context) (*ObjectState, error) {
 	var zero *ObjectState
-	p, err := mod.getField(ctx, "ObjectState_parent", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_parent(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8836,7 +9454,8 @@ func (v *ObjectState) SetType(_arg ObjectType) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_type", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_type(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetType() ObjectType {
@@ -8849,7 +9468,13 @@ func (v *ObjectState) GetType() ObjectType {
 
 func (v *ObjectState) getType(ctx context.Context) (ObjectType, error) {
 	var zero ObjectType
-	p, err := mod.getField(ctx, "ObjectState_type", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_type(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8863,7 +9488,8 @@ func (v *ObjectState) SetG(_arg *Graph) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_g", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_g(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetG() *Graph {
@@ -8876,7 +9502,13 @@ func (v *ObjectState) GetG() *Graph {
 
 func (v *ObjectState) getG(ctx context.Context) (*Graph, error) {
 	var zero *Graph
-	p, err := mod.getField(ctx, "ObjectState_g", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_g(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8890,7 +9522,8 @@ func (v *ObjectState) SetSg(_arg *Graph) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_sg", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_sg(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetSg() *Graph {
@@ -8903,7 +9536,13 @@ func (v *ObjectState) GetSg() *Graph {
 
 func (v *ObjectState) getSg(ctx context.Context) (*Graph, error) {
 	var zero *Graph
-	p, err := mod.getField(ctx, "ObjectState_sg", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_sg(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8917,7 +9556,8 @@ func (v *ObjectState) SetN(_arg *Node) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_n", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_n(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetN() *Node {
@@ -8930,7 +9570,13 @@ func (v *ObjectState) GetN() *Node {
 
 func (v *ObjectState) getN(ctx context.Context) (*Node, error) {
 	var zero *Node
-	p, err := mod.getField(ctx, "ObjectState_n", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_n(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8944,7 +9590,8 @@ func (v *ObjectState) SetE(_arg *Edge) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_e", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_e(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetE() *Edge {
@@ -8957,7 +9604,13 @@ func (v *ObjectState) GetE() *Edge {
 
 func (v *ObjectState) getE(ctx context.Context) (*Edge, error) {
 	var zero *Edge
-	p, err := mod.getField(ctx, "ObjectState_e", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_e(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8971,7 +9624,8 @@ func (v *ObjectState) SetEmitState(_arg EmitState) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_emit_state", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_emit_state(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetEmitState() EmitState {
@@ -8984,7 +9638,13 @@ func (v *ObjectState) GetEmitState() EmitState {
 
 func (v *ObjectState) getEmitState(ctx context.Context) (EmitState, error) {
 	var zero EmitState
-	p, err := mod.getField(ctx, "ObjectState_emit_state", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_emit_state(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -8998,7 +9658,8 @@ func (v *ObjectState) SetPencolor(_arg *Color) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_pencolor", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_pencolor(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetPencolor() *Color {
@@ -9011,7 +9672,13 @@ func (v *ObjectState) GetPencolor() *Color {
 
 func (v *ObjectState) getPencolor(ctx context.Context) (*Color, error) {
 	var zero *Color
-	p, err := mod.getField(ctx, "ObjectState_pencolor", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_pencolor(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9025,7 +9692,8 @@ func (v *ObjectState) SetFillcolor(_arg *Color) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_fillcolor", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_fillcolor(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetFillcolor() *Color {
@@ -9038,7 +9706,13 @@ func (v *ObjectState) GetFillcolor() *Color {
 
 func (v *ObjectState) getFillcolor(ctx context.Context) (*Color, error) {
 	var zero *Color
-	p, err := mod.getField(ctx, "ObjectState_fillcolor", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_fillcolor(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9052,7 +9726,8 @@ func (v *ObjectState) SetStopcolor(_arg *Color) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_stopcolor", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_stopcolor(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetStopcolor() *Color {
@@ -9065,7 +9740,13 @@ func (v *ObjectState) GetStopcolor() *Color {
 
 func (v *ObjectState) getStopcolor(ctx context.Context) (*Color, error) {
 	var zero *Color
-	p, err := mod.getField(ctx, "ObjectState_stopcolor", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_stopcolor(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9079,7 +9760,8 @@ func (v *ObjectState) SetGradientAngle(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_gradient_angle", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_gradient_angle(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetGradientAngle() int64 {
@@ -9092,7 +9774,13 @@ func (v *ObjectState) GetGradientAngle() int64 {
 
 func (v *ObjectState) getGradientAngle(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "ObjectState_gradient_angle", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_gradient_angle(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9106,7 +9794,8 @@ func (v *ObjectState) SetGradientFrac(_arg float32) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_gradient_frac", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_gradient_frac(int32(v.getPtr()), float32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetGradientFrac() float32 {
@@ -9119,7 +9808,13 @@ func (v *ObjectState) GetGradientFrac() float32 {
 
 func (v *ObjectState) getGradientFrac(ctx context.Context) (float32, error) {
 	var zero float32
-	p, err := mod.getField(ctx, "ObjectState_gradient_frac", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_gradient_frac(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9136,7 +9831,8 @@ func (v *ObjectState) SetPen(_arg PenType) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_pen", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_pen(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetPen() PenType {
@@ -9149,7 +9845,13 @@ func (v *ObjectState) GetPen() PenType {
 
 func (v *ObjectState) getPen(ctx context.Context) (PenType, error) {
 	var zero PenType
-	p, err := mod.getField(ctx, "ObjectState_pen", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_pen(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9163,7 +9865,8 @@ func (v *ObjectState) SetFill(_arg FillType) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_fill", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_fill(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetFill() FillType {
@@ -9176,7 +9879,13 @@ func (v *ObjectState) GetFill() FillType {
 
 func (v *ObjectState) getFill(ctx context.Context) (FillType, error) {
 	var zero FillType
-	p, err := mod.getField(ctx, "ObjectState_fill", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_fill(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9190,7 +9899,8 @@ func (v *ObjectState) SetPenwidth(_arg float64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_penwidth", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_penwidth(int32(v.getPtr()), float64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetPenwidth() float64 {
@@ -9203,7 +9913,13 @@ func (v *ObjectState) GetPenwidth() float64 {
 
 func (v *ObjectState) getPenwidth(ctx context.Context) (float64, error) {
 	var zero float64
-	p, err := mod.getField(ctx, "ObjectState_penwidth", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_penwidth(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9220,7 +9936,8 @@ func (v *ObjectState) SetRawstyle(_arg []string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_rawstyle", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_rawstyle(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetRawstyle() []string {
@@ -9233,7 +9950,13 @@ func (v *ObjectState) GetRawstyle() []string {
 
 func (v *ObjectState) getRawstyle(ctx context.Context) ([]string, error) {
 	var zero []string
-	p, err := mod.getField(ctx, "ObjectState_rawstyle", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_rawstyle(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9254,7 +9977,8 @@ func (v *ObjectState) SetZ(_arg float64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_z", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_z(int32(v.getPtr()), float64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetZ() float64 {
@@ -9267,7 +9991,13 @@ func (v *ObjectState) GetZ() float64 {
 
 func (v *ObjectState) getZ(ctx context.Context) (float64, error) {
 	var zero float64
-	p, err := mod.getField(ctx, "ObjectState_z", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_z(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9284,7 +10014,8 @@ func (v *ObjectState) SetTailZ(_arg float64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_tail_z", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_tail_z(int32(v.getPtr()), float64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetTailZ() float64 {
@@ -9297,7 +10028,13 @@ func (v *ObjectState) GetTailZ() float64 {
 
 func (v *ObjectState) getTailZ(ctx context.Context) (float64, error) {
 	var zero float64
-	p, err := mod.getField(ctx, "ObjectState_tail_z", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_tail_z(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9314,7 +10051,8 @@ func (v *ObjectState) SetHeadZ(_arg float64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_head_z", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_head_z(int32(v.getPtr()), float64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetHeadZ() float64 {
@@ -9327,7 +10065,13 @@ func (v *ObjectState) GetHeadZ() float64 {
 
 func (v *ObjectState) getHeadZ(ctx context.Context) (float64, error) {
 	var zero float64
-	p, err := mod.getField(ctx, "ObjectState_head_z", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_head_z(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9344,7 +10088,8 @@ func (v *ObjectState) SetLabel(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_label", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_label(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetLabel() string {
@@ -9357,7 +10102,13 @@ func (v *ObjectState) GetLabel() string {
 
 func (v *ObjectState) getLabel(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_label", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_label(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9374,7 +10125,8 @@ func (v *ObjectState) SetXlabel(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_xlabel", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_xlabel(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetXlabel() string {
@@ -9387,7 +10139,13 @@ func (v *ObjectState) GetXlabel() string {
 
 func (v *ObjectState) getXlabel(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_xlabel", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_xlabel(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9404,7 +10162,8 @@ func (v *ObjectState) SetTaillabel(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_taillabel", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_taillabel(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetTaillabel() string {
@@ -9417,7 +10176,13 @@ func (v *ObjectState) GetTaillabel() string {
 
 func (v *ObjectState) getTaillabel(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_taillabel", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_taillabel(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9434,7 +10199,8 @@ func (v *ObjectState) SetHeadlabel(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_headlabel", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_headlabel(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetHeadlabel() string {
@@ -9447,7 +10213,13 @@ func (v *ObjectState) GetHeadlabel() string {
 
 func (v *ObjectState) getHeadlabel(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_headlabel", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_headlabel(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9464,7 +10236,8 @@ func (v *ObjectState) SetUrl(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_url", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_url(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetUrl() string {
@@ -9477,7 +10250,13 @@ func (v *ObjectState) GetUrl() string {
 
 func (v *ObjectState) getUrl(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_url", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_url(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9494,7 +10273,8 @@ func (v *ObjectState) SetId(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_id(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetId() string {
@@ -9507,7 +10287,13 @@ func (v *ObjectState) GetId() string {
 
 func (v *ObjectState) getId(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9524,7 +10310,8 @@ func (v *ObjectState) SetLabelurl(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_labelurl", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_labelurl(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetLabelurl() string {
@@ -9537,7 +10324,13 @@ func (v *ObjectState) GetLabelurl() string {
 
 func (v *ObjectState) getLabelurl(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_labelurl", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_labelurl(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9554,7 +10347,8 @@ func (v *ObjectState) SetTailurl(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_tailurl", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_tailurl(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetTailurl() string {
@@ -9567,7 +10361,13 @@ func (v *ObjectState) GetTailurl() string {
 
 func (v *ObjectState) getTailurl(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_tailurl", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_tailurl(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9584,7 +10384,8 @@ func (v *ObjectState) SetHeadurl(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_headurl", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_headurl(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetHeadurl() string {
@@ -9597,7 +10398,13 @@ func (v *ObjectState) GetHeadurl() string {
 
 func (v *ObjectState) getHeadurl(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_headurl", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_headurl(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9614,7 +10421,8 @@ func (v *ObjectState) SetTooltip(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_tooltip", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_tooltip(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetTooltip() string {
@@ -9627,7 +10435,13 @@ func (v *ObjectState) GetTooltip() string {
 
 func (v *ObjectState) getTooltip(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_tooltip", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_tooltip(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9644,7 +10458,8 @@ func (v *ObjectState) SetLabeltooltip(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_labeltooltip", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_labeltooltip(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetLabeltooltip() string {
@@ -9657,7 +10472,13 @@ func (v *ObjectState) GetLabeltooltip() string {
 
 func (v *ObjectState) getLabeltooltip(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_labeltooltip", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_labeltooltip(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9674,7 +10495,8 @@ func (v *ObjectState) SetTailtooltip(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_tailtooltip", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_tailtooltip(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetTailtooltip() string {
@@ -9687,7 +10509,13 @@ func (v *ObjectState) GetTailtooltip() string {
 
 func (v *ObjectState) getTailtooltip(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_tailtooltip", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_tailtooltip(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9704,7 +10532,8 @@ func (v *ObjectState) SetHeadtooltip(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_headtooltip", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_headtooltip(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetHeadtooltip() string {
@@ -9717,7 +10546,13 @@ func (v *ObjectState) GetHeadtooltip() string {
 
 func (v *ObjectState) getHeadtooltip(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_headtooltip", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_headtooltip(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9734,7 +10569,8 @@ func (v *ObjectState) SetTarget(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_target", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_target(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetTarget() string {
@@ -9747,7 +10583,13 @@ func (v *ObjectState) GetTarget() string {
 
 func (v *ObjectState) getTarget(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_target", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_target(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9764,7 +10606,8 @@ func (v *ObjectState) SetLabeltarget(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_labeltarget", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_labeltarget(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetLabeltarget() string {
@@ -9777,7 +10620,13 @@ func (v *ObjectState) GetLabeltarget() string {
 
 func (v *ObjectState) getLabeltarget(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_labeltarget", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_labeltarget(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9794,7 +10643,8 @@ func (v *ObjectState) SetTailtarget(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_tailtarget", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_tailtarget(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetTailtarget() string {
@@ -9807,7 +10657,13 @@ func (v *ObjectState) GetTailtarget() string {
 
 func (v *ObjectState) getTailtarget(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_tailtarget", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_tailtarget(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9824,7 +10680,8 @@ func (v *ObjectState) SetHeadtarget(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_headtarget", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_headtarget(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetHeadtarget() string {
@@ -9837,7 +10694,13 @@ func (v *ObjectState) GetHeadtarget() string {
 
 func (v *ObjectState) getHeadtarget(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "ObjectState_headtarget", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_headtarget(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9854,7 +10717,8 @@ func (v *ObjectState) SetExplicitTooltip(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_explicit_tooltip", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_explicit_tooltip(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetExplicitTooltip() uint64 {
@@ -9867,7 +10731,13 @@ func (v *ObjectState) GetExplicitTooltip() uint64 {
 
 func (v *ObjectState) getExplicitTooltip(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "ObjectState_explicit_tooltip", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_explicit_tooltip(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9881,7 +10751,8 @@ func (v *ObjectState) SetExplicitTailtooltip(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_explicit_tailtooltip", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_explicit_tailtooltip(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetExplicitTailtooltip() uint64 {
@@ -9894,7 +10765,13 @@ func (v *ObjectState) GetExplicitTailtooltip() uint64 {
 
 func (v *ObjectState) getExplicitTailtooltip(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "ObjectState_explicit_tailtooltip", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_explicit_tailtooltip(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9908,7 +10785,8 @@ func (v *ObjectState) SetExplicitHeadtooltip(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_explicit_headtooltip", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_explicit_headtooltip(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetExplicitHeadtooltip() uint64 {
@@ -9921,7 +10799,13 @@ func (v *ObjectState) GetExplicitHeadtooltip() uint64 {
 
 func (v *ObjectState) getExplicitHeadtooltip(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "ObjectState_explicit_headtooltip", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_explicit_headtooltip(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9935,7 +10819,8 @@ func (v *ObjectState) SetExplicitLabeltooltip(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_explicit_labeltooltip", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_explicit_labeltooltip(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetExplicitLabeltooltip() uint64 {
@@ -9948,7 +10833,13 @@ func (v *ObjectState) GetExplicitLabeltooltip() uint64 {
 
 func (v *ObjectState) getExplicitLabeltooltip(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "ObjectState_explicit_labeltooltip", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_explicit_labeltooltip(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9962,7 +10853,8 @@ func (v *ObjectState) SetExplicitTailtarget(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_explicit_tailtarget", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_explicit_tailtarget(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetExplicitTailtarget() uint64 {
@@ -9975,7 +10867,13 @@ func (v *ObjectState) GetExplicitTailtarget() uint64 {
 
 func (v *ObjectState) getExplicitTailtarget(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "ObjectState_explicit_tailtarget", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_explicit_tailtarget(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -9989,7 +10887,8 @@ func (v *ObjectState) SetExplicitHeadtarget(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_explicit_headtarget", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_explicit_headtarget(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetExplicitHeadtarget() uint64 {
@@ -10002,7 +10901,13 @@ func (v *ObjectState) GetExplicitHeadtarget() uint64 {
 
 func (v *ObjectState) getExplicitHeadtarget(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "ObjectState_explicit_headtarget", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_explicit_headtarget(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10016,7 +10921,8 @@ func (v *ObjectState) SetExplicitEdgetarget(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_explicit_edgetarget", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_explicit_edgetarget(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetExplicitEdgetarget() uint64 {
@@ -10029,7 +10935,13 @@ func (v *ObjectState) GetExplicitEdgetarget() uint64 {
 
 func (v *ObjectState) getExplicitEdgetarget(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "ObjectState_explicit_edgetarget", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_explicit_edgetarget(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10043,7 +10955,8 @@ func (v *ObjectState) SetExplicitTailurl(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_explicit_tailurl", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_explicit_tailurl(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetExplicitTailurl() uint64 {
@@ -10056,7 +10969,13 @@ func (v *ObjectState) GetExplicitTailurl() uint64 {
 
 func (v *ObjectState) getExplicitTailurl(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "ObjectState_explicit_tailurl", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_explicit_tailurl(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10070,7 +10989,8 @@ func (v *ObjectState) SetExplicitHeadurl(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_explicit_headurl", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_explicit_headurl(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetExplicitHeadurl() uint64 {
@@ -10083,7 +11003,13 @@ func (v *ObjectState) GetExplicitHeadurl() uint64 {
 
 func (v *ObjectState) getExplicitHeadurl(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "ObjectState_explicit_headurl", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_explicit_headurl(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10097,7 +11023,8 @@ func (v *ObjectState) SetLabeledgealigned(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_labeledgealigned", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_labeledgealigned(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetLabeledgealigned() uint64 {
@@ -10110,7 +11037,13 @@ func (v *ObjectState) GetLabeledgealigned() uint64 {
 
 func (v *ObjectState) getLabeledgealigned(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "ObjectState_labeledgealigned", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_labeledgealigned(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10124,7 +11057,8 @@ func (v *ObjectState) SetUrlMapShape(_arg MapShapeType) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_url_map_shape", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_url_map_shape(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetUrlMapShape() MapShapeType {
@@ -10137,7 +11071,13 @@ func (v *ObjectState) GetUrlMapShape() MapShapeType {
 
 func (v *ObjectState) getUrlMapShape(ctx context.Context) (MapShapeType, error) {
 	var zero MapShapeType
-	p, err := mod.getField(ctx, "ObjectState_url_map_shape", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_url_map_shape(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10151,7 +11091,8 @@ func (v *ObjectState) SetUrlMapN(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_url_map_n", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_url_map_n(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetUrlMapN() uint64 {
@@ -10164,7 +11105,13 @@ func (v *ObjectState) GetUrlMapN() uint64 {
 
 func (v *ObjectState) getUrlMapN(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "ObjectState_url_map_n", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_url_map_n(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10178,7 +11125,8 @@ func (v *ObjectState) SetUrlMapP(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_url_map_p", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_url_map_p(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetUrlMapP() *PointFloat {
@@ -10191,7 +11139,13 @@ func (v *ObjectState) GetUrlMapP() *PointFloat {
 
 func (v *ObjectState) getUrlMapP(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "ObjectState_url_map_p", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_url_map_p(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10205,7 +11159,8 @@ func (v *ObjectState) SetUrlBsplinemapPolyN(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_url_bsplinemap_poly_n", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_url_bsplinemap_poly_n(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetUrlBsplinemapPolyN() int64 {
@@ -10218,7 +11173,13 @@ func (v *ObjectState) GetUrlBsplinemapPolyN() int64 {
 
 func (v *ObjectState) getUrlBsplinemapPolyN(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "ObjectState_url_bsplinemap_poly_n", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_url_bsplinemap_poly_n(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10232,7 +11193,8 @@ func (v *ObjectState) SetUrlBsplinemapN(_arg []int) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_url_bsplinemap_n", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_url_bsplinemap_n(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetUrlBsplinemapN() []int {
@@ -10245,7 +11207,13 @@ func (v *ObjectState) GetUrlBsplinemapN() []int {
 
 func (v *ObjectState) getUrlBsplinemapN(ctx context.Context) ([]int, error) {
 	var zero []int
-	p, err := mod.getField(ctx, "ObjectState_url_bsplinemap_n", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_url_bsplinemap_n(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10263,7 +11231,8 @@ func (v *ObjectState) SetUrlBsplinemapP(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_url_bsplinemap_p", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_url_bsplinemap_p(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetUrlBsplinemapP() *PointFloat {
@@ -10276,7 +11245,13 @@ func (v *ObjectState) GetUrlBsplinemapP() *PointFloat {
 
 func (v *ObjectState) getUrlBsplinemapP(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "ObjectState_url_bsplinemap_p", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_url_bsplinemap_p(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10290,7 +11265,8 @@ func (v *ObjectState) SetTailendurlMapN(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_tailendurl_map_n", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_tailendurl_map_n(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetTailendurlMapN() int64 {
@@ -10303,7 +11279,13 @@ func (v *ObjectState) GetTailendurlMapN() int64 {
 
 func (v *ObjectState) getTailendurlMapN(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "ObjectState_tailendurl_map_n", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_tailendurl_map_n(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10317,7 +11299,8 @@ func (v *ObjectState) SetTailendurlMapP(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_tailendurl_map_p", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_tailendurl_map_p(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetTailendurlMapP() *PointFloat {
@@ -10330,7 +11313,13 @@ func (v *ObjectState) GetTailendurlMapP() *PointFloat {
 
 func (v *ObjectState) getTailendurlMapP(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "ObjectState_tailendurl_map_p", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_tailendurl_map_p(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10344,7 +11333,8 @@ func (v *ObjectState) SetHeadendurlMapN(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_headendurl_map_n", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_headendurl_map_n(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *ObjectState) GetHeadendurlMapN() int64 {
@@ -10357,7 +11347,13 @@ func (v *ObjectState) GetHeadendurlMapN() int64 {
 
 func (v *ObjectState) getHeadendurlMapN(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "ObjectState_headendurl_map_n", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_headendurl_map_n(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10371,7 +11367,8 @@ func (v *ObjectState) SetHeadendurlMapP(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "ObjectState_headendurl_map_p", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_ObjectState_headendurl_map_p(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *ObjectState) GetHeadendurlMapP() *PointFloat {
@@ -10384,7 +11381,13 @@ func (v *ObjectState) GetHeadendurlMapP() *PointFloat {
 
 func (v *ObjectState) getHeadendurlMapP(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "ObjectState_headendurl_map_p", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_ObjectState_headendurl_map_p(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10430,7 +11433,8 @@ func (v *DeviceCallbacks) SetRefresh(ctx context.Context, arg *CallbackFunc[func
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Refresh before")
 	}
 	mod.callbackFuncMap.DeviceCallbacks_Refresh[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DeviceCallbacks_refresh", v.getPtr())
+	mod.module.Xwasm_bridge_set_DeviceCallbacks_refresh(int32(v.getPtr()))
+	return nil
 }
 
 func (v *DeviceCallbacks) SetButtonPress(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, int, *PointFloat) error]) error {
@@ -10438,7 +11442,8 @@ func (v *DeviceCallbacks) SetButtonPress(ctx context.Context, arg *CallbackFunc[
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_ButtonPress before")
 	}
 	mod.callbackFuncMap.DeviceCallbacks_ButtonPress[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DeviceCallbacks_button_press", v.getPtr())
+	mod.module.Xwasm_bridge_set_DeviceCallbacks_button_press(int32(v.getPtr()))
+	return nil
 }
 
 func (v *DeviceCallbacks) SetButtonRelease(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, int, *PointFloat) error]) error {
@@ -10446,7 +11451,8 @@ func (v *DeviceCallbacks) SetButtonRelease(ctx context.Context, arg *CallbackFun
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_ButtonRelease before")
 	}
 	mod.callbackFuncMap.DeviceCallbacks_ButtonRelease[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DeviceCallbacks_button_release", v.getPtr())
+	mod.module.Xwasm_bridge_set_DeviceCallbacks_button_release(int32(v.getPtr()))
+	return nil
 }
 
 func (v *DeviceCallbacks) SetMotion(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, *PointFloat) error]) error {
@@ -10454,7 +11460,8 @@ func (v *DeviceCallbacks) SetMotion(ctx context.Context, arg *CallbackFunc[func(
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Motion before")
 	}
 	mod.callbackFuncMap.DeviceCallbacks_Motion[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DeviceCallbacks_motion", v.getPtr())
+	mod.module.Xwasm_bridge_set_DeviceCallbacks_motion(int32(v.getPtr()))
+	return nil
 }
 
 func (v *DeviceCallbacks) SetModify(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, string, string) error]) error {
@@ -10462,7 +11469,8 @@ func (v *DeviceCallbacks) SetModify(ctx context.Context, arg *CallbackFunc[func(
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Modify before")
 	}
 	mod.callbackFuncMap.DeviceCallbacks_Modify[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DeviceCallbacks_modify", v.getPtr())
+	mod.module.Xwasm_bridge_set_DeviceCallbacks_modify(int32(v.getPtr()))
+	return nil
 }
 
 func (v *DeviceCallbacks) SetDel(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -10470,7 +11478,8 @@ func (v *DeviceCallbacks) SetDel(ctx context.Context, arg *CallbackFunc[func(con
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Delete before")
 	}
 	mod.callbackFuncMap.DeviceCallbacks_Delete[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DeviceCallbacks_del", v.getPtr())
+	mod.module.Xwasm_bridge_set_DeviceCallbacks_del(int32(v.getPtr()))
+	return nil
 }
 
 func (v *DeviceCallbacks) SetRead(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, string, string) error]) error {
@@ -10478,7 +11487,8 @@ func (v *DeviceCallbacks) SetRead(ctx context.Context, arg *CallbackFunc[func(co
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Read before")
 	}
 	mod.callbackFuncMap.DeviceCallbacks_Read[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DeviceCallbacks_read", v.getPtr())
+	mod.module.Xwasm_bridge_set_DeviceCallbacks_read(int32(v.getPtr()))
+	return nil
 }
 
 func (v *DeviceCallbacks) SetLayout(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, string) error]) error {
@@ -10486,7 +11496,8 @@ func (v *DeviceCallbacks) SetLayout(ctx context.Context, arg *CallbackFunc[func(
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Layout before")
 	}
 	mod.callbackFuncMap.DeviceCallbacks_Layout[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DeviceCallbacks_layout", v.getPtr())
+	mod.module.Xwasm_bridge_set_DeviceCallbacks_layout(int32(v.getPtr()))
+	return nil
 }
 
 func (v *DeviceCallbacks) SetRender(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, string, string) error]) error {
@@ -10494,7 +11505,8 @@ func (v *DeviceCallbacks) SetRender(ctx context.Context, arg *CallbackFunc[func(
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceCallbacks_Render before")
 	}
 	mod.callbackFuncMap.DeviceCallbacks_Render[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DeviceCallbacks_render", v.getPtr())
+	mod.module.Xwasm_bridge_set_DeviceCallbacks_render(int32(v.getPtr()))
+	return nil
 }
 
 type Job struct {
@@ -10536,7 +11548,8 @@ func (v *Job) SetGvc(_arg *Context) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_gvc", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_gvc(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetGvc() *Context {
@@ -10549,7 +11562,13 @@ func (v *Job) GetGvc() *Context {
 
 func (v *Job) getGvc(ctx context.Context) (*Context, error) {
 	var zero *Context
-	p, err := mod.getField(ctx, "Job_gvc", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_gvc(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10563,7 +11582,8 @@ func (v *Job) SetNext(_arg *Job) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_next", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_next(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetNext() *Job {
@@ -10576,7 +11596,13 @@ func (v *Job) GetNext() *Job {
 
 func (v *Job) getNext(ctx context.Context) (*Job, error) {
 	var zero *Job
-	p, err := mod.getField(ctx, "Job_next", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_next(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10590,7 +11616,8 @@ func (v *Job) SetNextActive(_arg *Job) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_next_active", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_next_active(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetNextActive() *Job {
@@ -10603,7 +11630,13 @@ func (v *Job) GetNextActive() *Job {
 
 func (v *Job) getNextActive(ctx context.Context) (*Job, error) {
 	var zero *Job
-	p, err := mod.getField(ctx, "Job_next_active", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_next_active(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10617,7 +11650,8 @@ func (v *Job) SetCommon(_arg *Common) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_common", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_common(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetCommon() *Common {
@@ -10630,7 +11664,13 @@ func (v *Job) GetCommon() *Common {
 
 func (v *Job) getCommon(ctx context.Context) (*Common, error) {
 	var zero *Common
-	p, err := mod.getField(ctx, "Job_common", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_common(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10644,7 +11684,8 @@ func (v *Job) SetObj(_arg *ObjectState) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_obj", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_obj(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetObj() *ObjectState {
@@ -10657,7 +11698,13 @@ func (v *Job) GetObj() *ObjectState {
 
 func (v *Job) getObj(ctx context.Context) (*ObjectState, error) {
 	var zero *ObjectState
-	p, err := mod.getField(ctx, "Job_obj", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_obj(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10671,7 +11718,8 @@ func (v *Job) SetInputFilename(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_input_filename", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_input_filename(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetInputFilename() string {
@@ -10684,7 +11732,13 @@ func (v *Job) GetInputFilename() string {
 
 func (v *Job) getInputFilename(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Job_input_filename", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_input_filename(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10701,7 +11755,8 @@ func (v *Job) SetGraphIndex(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_graph_index", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_graph_index(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Job) GetGraphIndex() int64 {
@@ -10714,7 +11769,13 @@ func (v *Job) GetGraphIndex() int64 {
 
 func (v *Job) getGraphIndex(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Job_graph_index", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_graph_index(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10728,7 +11789,8 @@ func (v *Job) SetLayoutType(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_layout_type", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_layout_type(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetLayoutType() string {
@@ -10741,7 +11803,13 @@ func (v *Job) GetLayoutType() string {
 
 func (v *Job) getLayoutType(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Job_layout_type", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_layout_type(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10758,7 +11826,8 @@ func (v *Job) SetOutputFilename(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_output_filename", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_output_filename(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetOutputFilename() string {
@@ -10771,7 +11840,13 @@ func (v *Job) GetOutputFilename() string {
 
 func (v *Job) getOutputFilename(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Job_output_filename", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_output_filename(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10788,7 +11863,8 @@ func (v *Job) SetOutputFile(_arg *File) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_output_file", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_output_file(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetOutputFile() *File {
@@ -10801,7 +11877,13 @@ func (v *Job) GetOutputFile() *File {
 
 func (v *Job) getOutputFile(ctx context.Context) (*File, error) {
 	var zero *File
-	p, err := mod.getField(ctx, "Job_output_file", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_output_file(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10815,7 +11897,8 @@ func (v *Job) SetOutputData(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_output_data", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_output_data(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetOutputData() string {
@@ -10828,7 +11911,13 @@ func (v *Job) GetOutputData() string {
 
 func (v *Job) getOutputData(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Job_output_data", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_output_data(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10845,7 +11934,8 @@ func (v *Job) SetOutputDataAllocated(_arg uint) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_output_data_allocated", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_output_data_allocated(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetOutputDataAllocated() uint {
@@ -10858,7 +11948,13 @@ func (v *Job) GetOutputDataAllocated() uint {
 
 func (v *Job) getOutputDataAllocated(ctx context.Context) (uint, error) {
 	var zero uint
-	p, err := mod.getField(ctx, "Job_output_data_allocated", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_output_data_allocated(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10872,7 +11968,8 @@ func (v *Job) SetOutputDataPosition(_arg uint) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_output_data_position", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_output_data_position(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetOutputDataPosition() uint {
@@ -10885,7 +11982,13 @@ func (v *Job) GetOutputDataPosition() uint {
 
 func (v *Job) getOutputDataPosition(ctx context.Context) (uint, error) {
 	var zero uint
-	p, err := mod.getField(ctx, "Job_output_data_position", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_output_data_position(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10899,7 +12002,8 @@ func (v *Job) SetOutputLangname(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_output_langname", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_output_langname(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetOutputLangname() string {
@@ -10912,7 +12016,13 @@ func (v *Job) GetOutputLangname() string {
 
 func (v *Job) getOutputLangname(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Job_output_langname", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_output_langname(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10929,7 +12039,8 @@ func (v *Job) SetOutputLang(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_output_lang", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_output_lang(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Job) GetOutputLang() int64 {
@@ -10942,7 +12053,13 @@ func (v *Job) GetOutputLang() int64 {
 
 func (v *Job) getOutputLang(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Job_output_lang", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_output_lang(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10956,7 +12073,8 @@ func (v *Job) SetRender(_arg *PluginActiveRender) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_render", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_render(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetRender() *PluginActiveRender {
@@ -10969,7 +12087,13 @@ func (v *Job) GetRender() *PluginActiveRender {
 
 func (v *Job) getRender(ctx context.Context) (*PluginActiveRender, error) {
 	var zero *PluginActiveRender
-	p, err := mod.getField(ctx, "Job_render", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_render(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -10983,7 +12107,8 @@ func (v *Job) SetDevice(_arg *PluginActiveDevice) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_device", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_device(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetDevice() *PluginActiveDevice {
@@ -10996,7 +12121,13 @@ func (v *Job) GetDevice() *PluginActiveDevice {
 
 func (v *Job) getDevice(ctx context.Context) (*PluginActiveDevice, error) {
 	var zero *PluginActiveDevice
-	p, err := mod.getField(ctx, "Job_device", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_device(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11010,7 +12141,8 @@ func (v *Job) SetLoadimage(_arg *PluginActiveLoadImage) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_loadimage", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_loadimage(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetLoadimage() *PluginActiveLoadImage {
@@ -11023,7 +12155,13 @@ func (v *Job) GetLoadimage() *PluginActiveLoadImage {
 
 func (v *Job) getLoadimage(ctx context.Context) (*PluginActiveLoadImage, error) {
 	var zero *PluginActiveLoadImage
-	p, err := mod.getField(ctx, "Job_loadimage", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_loadimage(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11037,7 +12175,8 @@ func (v *Job) SetCallbacks(_arg *DeviceCallbacks) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_callbacks", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_callbacks(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetCallbacks() *DeviceCallbacks {
@@ -11050,7 +12189,13 @@ func (v *Job) GetCallbacks() *DeviceCallbacks {
 
 func (v *Job) getCallbacks(ctx context.Context) (*DeviceCallbacks, error) {
 	var zero *DeviceCallbacks
-	p, err := mod.getField(ctx, "Job_callbacks", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_callbacks(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11064,7 +12209,8 @@ func (v *Job) SetDeviceDpi(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_device_dpi", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_device_dpi(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetDeviceDpi() *PointFloat {
@@ -11077,7 +12223,13 @@ func (v *Job) GetDeviceDpi() *PointFloat {
 
 func (v *Job) getDeviceDpi(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "Job_device_dpi", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_device_dpi(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11091,7 +12243,8 @@ func (v *Job) SetDeviceSetsDpi(_arg bool) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_device_sets_dpi", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_device_sets_dpi(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetDeviceSetsDpi() bool {
@@ -11104,7 +12257,13 @@ func (v *Job) GetDeviceSetsDpi() bool {
 
 func (v *Job) getDeviceSetsDpi(ctx context.Context) (bool, error) {
 	var zero bool
-	p, err := mod.getField(ctx, "Job_device_sets_dpi", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_device_sets_dpi(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11118,7 +12277,8 @@ func (v *Job) SetDisplay(_arg any) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_display", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_display(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetDisplay() any {
@@ -11131,7 +12291,13 @@ func (v *Job) GetDisplay() any {
 
 func (v *Job) getDisplay(ctx context.Context) (any, error) {
 	var zero any
-	p, err := mod.getField(ctx, "Job_display", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_display(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11145,7 +12311,8 @@ func (v *Job) SetScreen(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_screen", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_screen(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Job) GetScreen() int64 {
@@ -11158,7 +12325,13 @@ func (v *Job) GetScreen() int64 {
 
 func (v *Job) getScreen(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Job_screen", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_screen(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11172,7 +12345,8 @@ func (v *Job) SetContext(_arg any) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_context", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_context(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetContext() any {
@@ -11185,7 +12359,13 @@ func (v *Job) GetContext() any {
 
 func (v *Job) getContext(ctx context.Context) (any, error) {
 	var zero any
-	p, err := mod.getField(ctx, "Job_context", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_context(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11199,7 +12379,8 @@ func (v *Job) SetExternalContext(_arg bool) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_external_context", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_external_context(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetExternalContext() bool {
@@ -11212,7 +12393,13 @@ func (v *Job) GetExternalContext() bool {
 
 func (v *Job) getExternalContext(ctx context.Context) (bool, error) {
 	var zero bool
-	p, err := mod.getField(ctx, "Job_external_context", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_external_context(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11226,7 +12413,8 @@ func (v *Job) SetImagedata(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_imagedata", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_imagedata(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetImagedata() string {
@@ -11239,7 +12427,13 @@ func (v *Job) GetImagedata() string {
 
 func (v *Job) getImagedata(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Job_imagedata", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_imagedata(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11256,7 +12450,8 @@ func (v *Job) SetFlags(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_flags", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_flags(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Job) GetFlags() int64 {
@@ -11269,7 +12464,13 @@ func (v *Job) GetFlags() int64 {
 
 func (v *Job) getFlags(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Job_flags", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_flags(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11283,7 +12484,8 @@ func (v *Job) SetNumLayers(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_num_layers", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_num_layers(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Job) GetNumLayers() int64 {
@@ -11296,7 +12498,13 @@ func (v *Job) GetNumLayers() int64 {
 
 func (v *Job) getNumLayers(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Job_num_layers", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_num_layers(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11310,7 +12518,8 @@ func (v *Job) SetLayerNum(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_layer_num", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_layer_num(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Job) GetLayerNum() int64 {
@@ -11323,7 +12532,13 @@ func (v *Job) GetLayerNum() int64 {
 
 func (v *Job) getLayerNum(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Job_layer_num", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_layer_num(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11337,7 +12552,8 @@ func (v *Job) SetPagesArraySize(_arg *Point) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_pages_array_size", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_pages_array_size(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetPagesArraySize() *Point {
@@ -11350,7 +12566,13 @@ func (v *Job) GetPagesArraySize() *Point {
 
 func (v *Job) getPagesArraySize(ctx context.Context) (*Point, error) {
 	var zero *Point
-	p, err := mod.getField(ctx, "Job_pages_array_size", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_pages_array_size(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11364,7 +12586,8 @@ func (v *Job) SetPagesArrayFirst(_arg *Point) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_pages_array_first", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_pages_array_first(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetPagesArrayFirst() *Point {
@@ -11377,7 +12600,13 @@ func (v *Job) GetPagesArrayFirst() *Point {
 
 func (v *Job) getPagesArrayFirst(ctx context.Context) (*Point, error) {
 	var zero *Point
-	p, err := mod.getField(ctx, "Job_pages_array_first", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_pages_array_first(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11391,7 +12620,8 @@ func (v *Job) SetPagesArrayMajor(_arg *Point) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_pages_array_major", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_pages_array_major(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetPagesArrayMajor() *Point {
@@ -11404,7 +12634,13 @@ func (v *Job) GetPagesArrayMajor() *Point {
 
 func (v *Job) getPagesArrayMajor(ctx context.Context) (*Point, error) {
 	var zero *Point
-	p, err := mod.getField(ctx, "Job_pages_array_major", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_pages_array_major(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11418,7 +12654,8 @@ func (v *Job) SetPagesArrayMinor(_arg *Point) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_pages_array_minor", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_pages_array_minor(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetPagesArrayMinor() *Point {
@@ -11431,7 +12668,13 @@ func (v *Job) GetPagesArrayMinor() *Point {
 
 func (v *Job) getPagesArrayMinor(ctx context.Context) (*Point, error) {
 	var zero *Point
-	p, err := mod.getField(ctx, "Job_pages_array_minor", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_pages_array_minor(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11445,7 +12688,8 @@ func (v *Job) SetPagesArrayElem(_arg *Point) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_pages_array_elem", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_pages_array_elem(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetPagesArrayElem() *Point {
@@ -11458,7 +12702,13 @@ func (v *Job) GetPagesArrayElem() *Point {
 
 func (v *Job) getPagesArrayElem(ctx context.Context) (*Point, error) {
 	var zero *Point
-	p, err := mod.getField(ctx, "Job_pages_array_elem", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_pages_array_elem(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11472,7 +12722,8 @@ func (v *Job) SetNumPages(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_num_pages", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_num_pages(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Job) GetNumPages() int64 {
@@ -11485,7 +12736,13 @@ func (v *Job) GetNumPages() int64 {
 
 func (v *Job) getNumPages(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Job_num_pages", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_num_pages(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11499,7 +12756,8 @@ func (v *Job) SetBb(_arg *BoxFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_bb", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_bb(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetBb() *BoxFloat {
@@ -11512,7 +12770,13 @@ func (v *Job) GetBb() *BoxFloat {
 
 func (v *Job) getBb(ctx context.Context) (*BoxFloat, error) {
 	var zero *BoxFloat
-	p, err := mod.getField(ctx, "Job_bb", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_bb(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11526,7 +12790,8 @@ func (v *Job) SetPad(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_pad", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_pad(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetPad() *PointFloat {
@@ -11539,7 +12804,13 @@ func (v *Job) GetPad() *PointFloat {
 
 func (v *Job) getPad(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "Job_pad", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_pad(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11553,7 +12824,8 @@ func (v *Job) SetClip(_arg *BoxFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_clip", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_clip(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetClip() *BoxFloat {
@@ -11566,7 +12838,13 @@ func (v *Job) GetClip() *BoxFloat {
 
 func (v *Job) getClip(ctx context.Context) (*BoxFloat, error) {
 	var zero *BoxFloat
-	p, err := mod.getField(ctx, "Job_clip", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_clip(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11580,7 +12858,8 @@ func (v *Job) SetPageBox(_arg *BoxFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_page_box", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_page_box(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetPageBox() *BoxFloat {
@@ -11593,7 +12872,13 @@ func (v *Job) GetPageBox() *BoxFloat {
 
 func (v *Job) getPageBox(ctx context.Context) (*BoxFloat, error) {
 	var zero *BoxFloat
-	p, err := mod.getField(ctx, "Job_page_box", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_page_box(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11607,7 +12892,8 @@ func (v *Job) SetPageSize(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_page_size", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_page_size(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetPageSize() *PointFloat {
@@ -11620,7 +12906,13 @@ func (v *Job) GetPageSize() *PointFloat {
 
 func (v *Job) getPageSize(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "Job_page_size", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_page_size(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11634,7 +12926,8 @@ func (v *Job) SetFocus(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_focus", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_focus(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetFocus() *PointFloat {
@@ -11647,7 +12940,13 @@ func (v *Job) GetFocus() *PointFloat {
 
 func (v *Job) getFocus(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "Job_focus", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_focus(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11661,7 +12960,8 @@ func (v *Job) SetZoom(_arg float64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_zoom", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_zoom(int32(v.getPtr()), float64(arg))
+	return nil
 }
 
 func (v *Job) GetZoom() float64 {
@@ -11674,7 +12974,13 @@ func (v *Job) GetZoom() float64 {
 
 func (v *Job) getZoom(ctx context.Context) (float64, error) {
 	var zero float64
-	p, err := mod.getField(ctx, "Job_zoom", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_zoom(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11691,7 +12997,8 @@ func (v *Job) SetRotation(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_rotation", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_rotation(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Job) GetRotation() int64 {
@@ -11704,7 +13011,13 @@ func (v *Job) GetRotation() int64 {
 
 func (v *Job) getRotation(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Job_rotation", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_rotation(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11718,7 +13031,8 @@ func (v *Job) SetView(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_view", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_view(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetView() *PointFloat {
@@ -11731,7 +13045,13 @@ func (v *Job) GetView() *PointFloat {
 
 func (v *Job) getView(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "Job_view", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_view(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11745,7 +13065,8 @@ func (v *Job) SetCanvasBox(_arg *BoxFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_canvas_box", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_canvas_box(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetCanvasBox() *BoxFloat {
@@ -11758,7 +13079,13 @@ func (v *Job) GetCanvasBox() *BoxFloat {
 
 func (v *Job) getCanvasBox(ctx context.Context) (*BoxFloat, error) {
 	var zero *BoxFloat
-	p, err := mod.getField(ctx, "Job_canvas_box", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_canvas_box(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11772,7 +13099,8 @@ func (v *Job) SetMargin(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_margin", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_margin(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetMargin() *PointFloat {
@@ -11785,7 +13113,13 @@ func (v *Job) GetMargin() *PointFloat {
 
 func (v *Job) getMargin(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "Job_margin", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_margin(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11799,7 +13133,8 @@ func (v *Job) SetDpi(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_dpi", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_dpi(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetDpi() *PointFloat {
@@ -11812,7 +13147,13 @@ func (v *Job) GetDpi() *PointFloat {
 
 func (v *Job) getDpi(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "Job_dpi", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_dpi(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11826,7 +13167,8 @@ func (v *Job) SetWidth(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_width", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_width(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Job) GetWidth() uint64 {
@@ -11839,7 +13181,13 @@ func (v *Job) GetWidth() uint64 {
 
 func (v *Job) getWidth(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "Job_width", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_width(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11853,7 +13201,8 @@ func (v *Job) SetHeight(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_height", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_height(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Job) GetHeight() uint64 {
@@ -11866,7 +13215,13 @@ func (v *Job) GetHeight() uint64 {
 
 func (v *Job) getHeight(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "Job_height", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_height(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11880,7 +13235,8 @@ func (v *Job) SetPageBoundingBox(_arg *Box) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_page_bounding_box", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_page_bounding_box(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetPageBoundingBox() *Box {
@@ -11893,7 +13249,13 @@ func (v *Job) GetPageBoundingBox() *Box {
 
 func (v *Job) getPageBoundingBox(ctx context.Context) (*Box, error) {
 	var zero *Box
-	p, err := mod.getField(ctx, "Job_page_bounding_box", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_page_bounding_box(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11907,7 +13269,8 @@ func (v *Job) SetBoundingBox(_arg *Box) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_bounding_box", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_bounding_box(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetBoundingBox() *Box {
@@ -11920,7 +13283,13 @@ func (v *Job) GetBoundingBox() *Box {
 
 func (v *Job) getBoundingBox(ctx context.Context) (*Box, error) {
 	var zero *Box
-	p, err := mod.getField(ctx, "Job_bounding_box", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_bounding_box(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11934,7 +13303,8 @@ func (v *Job) SetScale(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_scale", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_scale(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetScale() *PointFloat {
@@ -11947,7 +13317,13 @@ func (v *Job) GetScale() *PointFloat {
 
 func (v *Job) getScale(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "Job_scale", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_scale(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11961,7 +13337,8 @@ func (v *Job) SetTranslation(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_translation", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_translation(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetTranslation() *PointFloat {
@@ -11974,7 +13351,13 @@ func (v *Job) GetTranslation() *PointFloat {
 
 func (v *Job) getTranslation(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "Job_translation", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_translation(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -11988,7 +13371,8 @@ func (v *Job) SetDevscale(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_devscale", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_devscale(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetDevscale() *PointFloat {
@@ -12001,7 +13385,13 @@ func (v *Job) GetDevscale() *PointFloat {
 
 func (v *Job) getDevscale(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "Job_devscale", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_devscale(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12015,7 +13405,8 @@ func (v *Job) SetFitMode(_arg bool) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_fit_mode", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_fit_mode(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetFitMode() bool {
@@ -12028,7 +13419,13 @@ func (v *Job) GetFitMode() bool {
 
 func (v *Job) getFitMode(ctx context.Context) (bool, error) {
 	var zero bool
-	p, err := mod.getField(ctx, "Job_fit_mode", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_fit_mode(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12042,7 +13439,8 @@ func (v *Job) SetNeedsRefresh(_arg bool) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_needs_refresh", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_needs_refresh(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetNeedsRefresh() bool {
@@ -12055,7 +13453,13 @@ func (v *Job) GetNeedsRefresh() bool {
 
 func (v *Job) getNeedsRefresh(ctx context.Context) (bool, error) {
 	var zero bool
-	p, err := mod.getField(ctx, "Job_needs_refresh", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_needs_refresh(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12069,7 +13473,8 @@ func (v *Job) SetClick(_arg bool) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_click", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_click(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetClick() bool {
@@ -12082,7 +13487,13 @@ func (v *Job) GetClick() bool {
 
 func (v *Job) getClick(ctx context.Context) (bool, error) {
 	var zero bool
-	p, err := mod.getField(ctx, "Job_click", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_click(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12096,7 +13507,8 @@ func (v *Job) SetHasGrown(_arg bool) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_has_grown", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_has_grown(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetHasGrown() bool {
@@ -12109,7 +13521,13 @@ func (v *Job) GetHasGrown() bool {
 
 func (v *Job) getHasGrown(ctx context.Context) (bool, error) {
 	var zero bool
-	p, err := mod.getField(ctx, "Job_has_grown", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_has_grown(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12123,7 +13541,8 @@ func (v *Job) SetHasBeenRendered(_arg bool) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_has_been_rendered", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_has_been_rendered(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetHasBeenRendered() bool {
@@ -12136,7 +13555,13 @@ func (v *Job) GetHasBeenRendered() bool {
 
 func (v *Job) getHasBeenRendered(ctx context.Context) (bool, error) {
 	var zero bool
-	p, err := mod.getField(ctx, "Job_has_been_rendered", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_has_been_rendered(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12150,7 +13575,8 @@ func (v *Job) SetButton(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_button", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_button(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Job) GetButton() uint64 {
@@ -12163,7 +13589,13 @@ func (v *Job) GetButton() uint64 {
 
 func (v *Job) getButton(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "Job_button", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_button(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12177,7 +13609,8 @@ func (v *Job) SetPointer(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_pointer", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_pointer(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetPointer() *PointFloat {
@@ -12190,7 +13623,13 @@ func (v *Job) GetPointer() *PointFloat {
 
 func (v *Job) getPointer(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "Job_pointer", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_pointer(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12204,7 +13643,8 @@ func (v *Job) SetOldpointer(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_oldpointer", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_oldpointer(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetOldpointer() *PointFloat {
@@ -12217,7 +13657,13 @@ func (v *Job) GetOldpointer() *PointFloat {
 
 func (v *Job) getOldpointer(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "Job_oldpointer", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_oldpointer(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12231,7 +13677,8 @@ func (v *Job) SetCurrentObj(_arg any) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_current_obj", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_current_obj(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetCurrentObj() any {
@@ -12244,7 +13691,13 @@ func (v *Job) GetCurrentObj() any {
 
 func (v *Job) getCurrentObj(ctx context.Context) (any, error) {
 	var zero any
-	p, err := mod.getField(ctx, "Job_current_obj", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_current_obj(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12258,7 +13711,8 @@ func (v *Job) SetSelectedObj(_arg any) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_selected_obj", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_selected_obj(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetSelectedObj() any {
@@ -12271,7 +13725,13 @@ func (v *Job) GetSelectedObj() any {
 
 func (v *Job) getSelectedObj(ctx context.Context) (any, error) {
 	var zero any
-	p, err := mod.getField(ctx, "Job_selected_obj", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_selected_obj(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12285,7 +13745,8 @@ func (v *Job) SetActiveTooltip(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_active_tooltip", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_active_tooltip(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetActiveTooltip() string {
@@ -12298,7 +13759,13 @@ func (v *Job) GetActiveTooltip() string {
 
 func (v *Job) getActiveTooltip(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Job_active_tooltip", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_active_tooltip(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12315,7 +13782,8 @@ func (v *Job) SetSelectedHref(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Job_selected_href", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Job_selected_href(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Job) GetSelectedHref() string {
@@ -12328,7 +13796,13 @@ func (v *Job) GetSelectedHref() string {
 
 func (v *Job) getSelectedHref(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Job_selected_href", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Job_selected_href(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12378,7 +13852,8 @@ func (v *Point) SetX(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Point_x", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Point_x(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Point) GetX() int64 {
@@ -12391,7 +13866,13 @@ func (v *Point) GetX() int64 {
 
 func (v *Point) getX(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Point_x", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Point_x(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12405,7 +13886,8 @@ func (v *Point) SetY(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Point_y", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Point_y(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Point) GetY() int64 {
@@ -12418,7 +13900,13 @@ func (v *Point) GetY() int64 {
 
 func (v *Point) getY(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Point_y", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Point_y(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12465,7 +13953,8 @@ func (v *BoxFloat) SetLl(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "BoxFloat_ll", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_BoxFloat_ll(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *BoxFloat) GetLl() *PointFloat {
@@ -12478,7 +13967,13 @@ func (v *BoxFloat) GetLl() *PointFloat {
 
 func (v *BoxFloat) getLl(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "BoxFloat_ll", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_BoxFloat_ll(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12492,7 +13987,8 @@ func (v *BoxFloat) SetUr(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "BoxFloat_ur", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_BoxFloat_ur(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *BoxFloat) GetUr() *PointFloat {
@@ -12505,7 +14001,13 @@ func (v *BoxFloat) GetUr() *PointFloat {
 
 func (v *BoxFloat) getUr(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "BoxFloat_ur", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_BoxFloat_ur(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12552,7 +14054,8 @@ func (v *Box) SetLl(_arg *Point) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Box_ll", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Box_ll(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Box) GetLl() *Point {
@@ -12565,7 +14068,13 @@ func (v *Box) GetLl() *Point {
 
 func (v *Box) getLl(ctx context.Context) (*Point, error) {
 	var zero *Point
-	p, err := mod.getField(ctx, "Box_ll", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Box_ll(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12579,7 +14088,8 @@ func (v *Box) SetUr(_arg *Point) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Box_ur", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Box_ur(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Box) GetUr() *Point {
@@ -12592,7 +14102,13 @@ func (v *Box) GetUr() *Point {
 
 func (v *Box) getUr(ctx context.Context) (*Point, error) {
 	var zero *Point
-	p, err := mod.getField(ctx, "Box_ur", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Box_ur(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12639,7 +14155,8 @@ func (v *Color) SetRgbaDouble(_arg []float64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Color_rgba_double", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Color_rgba_double(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Color) GetRgbaDouble() []float64 {
@@ -12652,7 +14169,13 @@ func (v *Color) GetRgbaDouble() []float64 {
 
 func (v *Color) getRgbaDouble(ctx context.Context) ([]float64, error) {
 	var zero []float64
-	p, err := mod.getField(ctx, "Color_rgba_double", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Color_rgba_double(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12673,7 +14196,8 @@ func (v *Color) SetHsva(_arg []float64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Color_hsva", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Color_hsva(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Color) GetHsva() []float64 {
@@ -12686,7 +14210,13 @@ func (v *Color) GetHsva() []float64 {
 
 func (v *Color) getHsva(ctx context.Context) ([]float64, error) {
 	var zero []float64
-	p, err := mod.getField(ctx, "Color_hsva", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Color_hsva(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12707,7 +14237,8 @@ func (v *Color) SetRgbaUint(_arg []uint) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Color_rgba_uint", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Color_rgba_uint(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Color) GetRgbaUint() []uint {
@@ -12720,7 +14251,13 @@ func (v *Color) GetRgbaUint() []uint {
 
 func (v *Color) getRgbaUint(ctx context.Context) ([]uint, error) {
 	var zero []uint
-	p, err := mod.getField(ctx, "Color_rgba_uint", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Color_rgba_uint(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12738,7 +14275,8 @@ func (v *Color) SetRgbaInt(_arg []int) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Color_rgba_int", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Color_rgba_int(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Color) GetRgbaInt() []int {
@@ -12751,7 +14289,13 @@ func (v *Color) GetRgbaInt() []int {
 
 func (v *Color) getRgbaInt(ctx context.Context) ([]int, error) {
 	var zero []int
-	p, err := mod.getField(ctx, "Color_rgba_int", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Color_rgba_int(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12769,7 +14313,8 @@ func (v *Color) SetString(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Color_string", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Color_string(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Color) GetString() string {
@@ -12782,7 +14327,13 @@ func (v *Color) GetString() string {
 
 func (v *Color) getString(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Color_string", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Color_string(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12799,7 +14350,8 @@ func (v *Color) SetIndex(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Color_index", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Color_index(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Color) GetIndex() int64 {
@@ -12812,7 +14364,13 @@ func (v *Color) GetIndex() int64 {
 
 func (v *Color) getIndex(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Color_index", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Color_index(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12826,7 +14384,8 @@ func (v *Color) SetType(_arg ColorType) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Color_type", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Color_type(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Color) GetType() ColorType {
@@ -12839,7 +14398,13 @@ func (v *Color) GetType() ColorType {
 
 func (v *Color) getType(ctx context.Context) (ColorType, error) {
 	var zero ColorType
-	p, err := mod.getField(ctx, "Color_type", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Color_type(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12886,7 +14451,8 @@ func (v *PointFloat) SetX(_arg float64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PointFloat_x", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PointFloat_x(int32(v.getPtr()), float64(arg))
+	return nil
 }
 
 func (v *PointFloat) GetX() float64 {
@@ -12899,7 +14465,13 @@ func (v *PointFloat) GetX() float64 {
 
 func (v *PointFloat) getX(ctx context.Context) (float64, error) {
 	var zero float64
-	p, err := mod.getField(ctx, "PointFloat_x", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PointFloat_x(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12916,7 +14488,8 @@ func (v *PointFloat) SetY(_arg float64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PointFloat_y", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PointFloat_y(int32(v.getPtr()), float64(arg))
+	return nil
 }
 
 func (v *PointFloat) GetY() float64 {
@@ -12929,7 +14502,13 @@ func (v *PointFloat) GetY() float64 {
 
 func (v *PointFloat) getY(ctx context.Context) (float64, error) {
 	var zero float64
-	p, err := mod.getField(ctx, "PointFloat_y", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PointFloat_y(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -12979,7 +14558,8 @@ func (v *PluginActiveDevice) SetEngine(_arg *DeviceEngine) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginActiveDevice_engine", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginActiveDevice_engine(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginActiveDevice) GetEngine() *DeviceEngine {
@@ -12992,7 +14572,13 @@ func (v *PluginActiveDevice) GetEngine() *DeviceEngine {
 
 func (v *PluginActiveDevice) getEngine(ctx context.Context) (*DeviceEngine, error) {
 	var zero *DeviceEngine
-	p, err := mod.getField(ctx, "PluginActiveDevice_engine", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginActiveDevice_engine(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13006,7 +14592,8 @@ func (v *PluginActiveDevice) SetId(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginActiveDevice_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginActiveDevice_id(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *PluginActiveDevice) GetId() int64 {
@@ -13019,7 +14606,13 @@ func (v *PluginActiveDevice) GetId() int64 {
 
 func (v *PluginActiveDevice) getId(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "PluginActiveDevice_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginActiveDevice_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13033,7 +14626,8 @@ func (v *PluginActiveDevice) SetFeatures(_arg *DeviceFeatures) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginActiveDevice_features", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginActiveDevice_features(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginActiveDevice) GetFeatures() *DeviceFeatures {
@@ -13046,7 +14640,13 @@ func (v *PluginActiveDevice) GetFeatures() *DeviceFeatures {
 
 func (v *PluginActiveDevice) getFeatures(ctx context.Context) (*DeviceFeatures, error) {
 	var zero *DeviceFeatures
-	p, err := mod.getField(ctx, "PluginActiveDevice_features", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginActiveDevice_features(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13060,7 +14660,8 @@ func (v *PluginActiveDevice) SetType(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginActiveDevice_type", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginActiveDevice_type(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginActiveDevice) GetType() string {
@@ -13073,7 +14674,13 @@ func (v *PluginActiveDevice) GetType() string {
 
 func (v *PluginActiveDevice) getType(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PluginActiveDevice_type", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginActiveDevice_type(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13123,7 +14730,8 @@ func (v *PluginActiveRender) SetEngine(_arg *RenderEngine) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginActiveRender_engine", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginActiveRender_engine(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginActiveRender) GetEngine() *RenderEngine {
@@ -13136,7 +14744,13 @@ func (v *PluginActiveRender) GetEngine() *RenderEngine {
 
 func (v *PluginActiveRender) getEngine(ctx context.Context) (*RenderEngine, error) {
 	var zero *RenderEngine
-	p, err := mod.getField(ctx, "PluginActiveRender_engine", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginActiveRender_engine(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13150,7 +14764,8 @@ func (v *PluginActiveRender) SetId(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginActiveRender_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginActiveRender_id(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *PluginActiveRender) GetId() int64 {
@@ -13163,7 +14778,13 @@ func (v *PluginActiveRender) GetId() int64 {
 
 func (v *PluginActiveRender) getId(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "PluginActiveRender_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginActiveRender_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13177,7 +14798,8 @@ func (v *PluginActiveRender) SetFeatures(_arg *RenderFeatures) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginActiveRender_features", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginActiveRender_features(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginActiveRender) GetFeatures() *RenderFeatures {
@@ -13190,7 +14812,13 @@ func (v *PluginActiveRender) GetFeatures() *RenderFeatures {
 
 func (v *PluginActiveRender) getFeatures(ctx context.Context) (*RenderFeatures, error) {
 	var zero *RenderFeatures
-	p, err := mod.getField(ctx, "PluginActiveRender_features", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginActiveRender_features(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13204,7 +14832,8 @@ func (v *PluginActiveRender) SetType(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginActiveRender_type", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginActiveRender_type(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginActiveRender) GetType() string {
@@ -13217,7 +14846,13 @@ func (v *PluginActiveRender) GetType() string {
 
 func (v *PluginActiveRender) getType(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PluginActiveRender_type", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginActiveRender_type(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13266,7 +14901,8 @@ func (v *DeviceEngine) SetInitialize(ctx context.Context, arg *CallbackFunc[func
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceEngine_Initialize before")
 	}
 	mod.callbackFuncMap.DeviceEngine_Initialize[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DeviceEngine_initialize", v.getPtr())
+	mod.module.Xwasm_bridge_set_DeviceEngine_initialize(int32(v.getPtr()))
+	return nil
 }
 
 func (v *DeviceEngine) SetFormat(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -13274,7 +14910,8 @@ func (v *DeviceEngine) SetFormat(ctx context.Context, arg *CallbackFunc[func(con
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceEngine_Format before")
 	}
 	mod.callbackFuncMap.DeviceEngine_Format[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DeviceEngine_format", v.getPtr())
+	mod.module.Xwasm_bridge_set_DeviceEngine_format(int32(v.getPtr()))
+	return nil
 }
 
 func (v *DeviceEngine) SetFinalize(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -13282,7 +14919,8 @@ func (v *DeviceEngine) SetFinalize(ctx context.Context, arg *CallbackFunc[func(c
 		return fmt.Errorf("cannot find lookup function. you must call Register_DeviceEngine_Finalize before")
 	}
 	mod.callbackFuncMap.DeviceEngine_Finalize[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "DeviceEngine_finalize", v.getPtr())
+	mod.module.Xwasm_bridge_set_DeviceEngine_finalize(int32(v.getPtr()))
+	return nil
 }
 
 type PostscriptAlias struct {
@@ -13324,7 +14962,8 @@ func (v *PostscriptAlias) SetName(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PostscriptAlias_name", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PostscriptAlias_name(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PostscriptAlias) GetName() string {
@@ -13337,7 +14976,13 @@ func (v *PostscriptAlias) GetName() string {
 
 func (v *PostscriptAlias) getName(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PostscriptAlias_name", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PostscriptAlias_name(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13354,7 +14999,8 @@ func (v *PostscriptAlias) SetFamily(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PostscriptAlias_family", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PostscriptAlias_family(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PostscriptAlias) GetFamily() string {
@@ -13367,7 +15013,13 @@ func (v *PostscriptAlias) GetFamily() string {
 
 func (v *PostscriptAlias) getFamily(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PostscriptAlias_family", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PostscriptAlias_family(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13384,7 +15036,8 @@ func (v *PostscriptAlias) SetWeight(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PostscriptAlias_weight", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PostscriptAlias_weight(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PostscriptAlias) GetWeight() string {
@@ -13397,7 +15050,13 @@ func (v *PostscriptAlias) GetWeight() string {
 
 func (v *PostscriptAlias) getWeight(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PostscriptAlias_weight", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PostscriptAlias_weight(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13414,7 +15073,8 @@ func (v *PostscriptAlias) SetStretch(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PostscriptAlias_stretch", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PostscriptAlias_stretch(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PostscriptAlias) GetStretch() string {
@@ -13427,7 +15087,13 @@ func (v *PostscriptAlias) GetStretch() string {
 
 func (v *PostscriptAlias) getStretch(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PostscriptAlias_stretch", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PostscriptAlias_stretch(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13444,7 +15110,8 @@ func (v *PostscriptAlias) SetStyle(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PostscriptAlias_style", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PostscriptAlias_style(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PostscriptAlias) GetStyle() string {
@@ -13457,7 +15124,13 @@ func (v *PostscriptAlias) GetStyle() string {
 
 func (v *PostscriptAlias) getStyle(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PostscriptAlias_style", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PostscriptAlias_style(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13474,7 +15147,8 @@ func (v *PostscriptAlias) SetXfigCode(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PostscriptAlias_xfig_code", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PostscriptAlias_xfig_code(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *PostscriptAlias) GetXfigCode() int64 {
@@ -13487,7 +15161,13 @@ func (v *PostscriptAlias) GetXfigCode() int64 {
 
 func (v *PostscriptAlias) getXfigCode(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "PostscriptAlias_xfig_code", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PostscriptAlias_xfig_code(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13501,7 +15181,8 @@ func (v *PostscriptAlias) SetSvgFontFamily(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PostscriptAlias_svg_font_family", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PostscriptAlias_svg_font_family(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PostscriptAlias) GetSvgFontFamily() string {
@@ -13514,7 +15195,13 @@ func (v *PostscriptAlias) GetSvgFontFamily() string {
 
 func (v *PostscriptAlias) getSvgFontFamily(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PostscriptAlias_svg_font_family", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PostscriptAlias_svg_font_family(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13531,7 +15218,8 @@ func (v *PostscriptAlias) SetSvgFontWeight(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PostscriptAlias_svg_font_weight", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PostscriptAlias_svg_font_weight(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PostscriptAlias) GetSvgFontWeight() string {
@@ -13544,7 +15232,13 @@ func (v *PostscriptAlias) GetSvgFontWeight() string {
 
 func (v *PostscriptAlias) getSvgFontWeight(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PostscriptAlias_svg_font_weight", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PostscriptAlias_svg_font_weight(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13561,7 +15255,8 @@ func (v *PostscriptAlias) SetSvgFontStyle(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PostscriptAlias_svg_font_style", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PostscriptAlias_svg_font_style(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PostscriptAlias) GetSvgFontStyle() string {
@@ -13574,7 +15269,13 @@ func (v *PostscriptAlias) GetSvgFontStyle() string {
 
 func (v *PostscriptAlias) getSvgFontStyle(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PostscriptAlias_svg_font_style", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PostscriptAlias_svg_font_style(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13624,7 +15325,8 @@ func (v *TextFont) SetName(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "TextFont_name", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_TextFont_name(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *TextFont) GetName() string {
@@ -13637,7 +15339,13 @@ func (v *TextFont) GetName() string {
 
 func (v *TextFont) getName(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "TextFont_name", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_TextFont_name(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13654,7 +15362,8 @@ func (v *TextFont) SetColor(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "TextFont_color", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_TextFont_color(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *TextFont) GetColor() string {
@@ -13667,7 +15376,13 @@ func (v *TextFont) GetColor() string {
 
 func (v *TextFont) getColor(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "TextFont_color", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_TextFont_color(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13684,7 +15399,8 @@ func (v *TextFont) SetPostscriptAlias(_arg *PostscriptAlias) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "TextFont_postscript_alias", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_TextFont_postscript_alias(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *TextFont) GetPostscriptAlias() *PostscriptAlias {
@@ -13697,7 +15413,13 @@ func (v *TextFont) GetPostscriptAlias() *PostscriptAlias {
 
 func (v *TextFont) getPostscriptAlias(ctx context.Context) (*PostscriptAlias, error) {
 	var zero *PostscriptAlias
-	p, err := mod.getField(ctx, "TextFont_postscript_alias", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_TextFont_postscript_alias(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13711,7 +15433,8 @@ func (v *TextFont) SetSize(_arg float64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "TextFont_size", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_TextFont_size(int32(v.getPtr()), float64(arg))
+	return nil
 }
 
 func (v *TextFont) GetSize() float64 {
@@ -13724,7 +15447,13 @@ func (v *TextFont) GetSize() float64 {
 
 func (v *TextFont) getSize(ctx context.Context) (float64, error) {
 	var zero float64
-	p, err := mod.getField(ctx, "TextFont_size", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_TextFont_size(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13741,7 +15470,8 @@ func (v *TextFont) SetFlags(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "TextFont_flags", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_TextFont_flags(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *TextFont) GetFlags() uint64 {
@@ -13754,7 +15484,13 @@ func (v *TextFont) GetFlags() uint64 {
 
 func (v *TextFont) getFlags(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "TextFont_flags", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_TextFont_flags(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13768,7 +15504,8 @@ func (v *TextFont) SetCount(_arg uint64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "TextFont_count", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_TextFont_count(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *TextFont) GetCount() uint64 {
@@ -13781,7 +15518,13 @@ func (v *TextFont) GetCount() uint64 {
 
 func (v *TextFont) getCount(ctx context.Context) (uint64, error) {
 	var zero uint64
-	p, err := mod.getField(ctx, "TextFont_count", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_TextFont_count(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13828,7 +15571,8 @@ func (v *Textspan) SetStr(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Textspan_str", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Textspan_str(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Textspan) GetStr() string {
@@ -13841,7 +15585,13 @@ func (v *Textspan) GetStr() string {
 
 func (v *Textspan) getStr(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "Textspan_str", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Textspan_str(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13858,7 +15608,8 @@ func (v *Textspan) SetFont(_arg *TextFont) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Textspan_font", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Textspan_font(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Textspan) GetFont() *TextFont {
@@ -13871,7 +15622,13 @@ func (v *Textspan) GetFont() *TextFont {
 
 func (v *Textspan) getFont(ctx context.Context) (*TextFont, error) {
 	var zero *TextFont
-	p, err := mod.getField(ctx, "Textspan_font", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Textspan_font(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13885,7 +15642,8 @@ func (v *Textspan) SetYOffsetLayout(_arg float64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Textspan_y_offset_layout", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Textspan_y_offset_layout(int32(v.getPtr()), float64(arg))
+	return nil
 }
 
 func (v *Textspan) GetYOffsetLayout() float64 {
@@ -13898,7 +15656,13 @@ func (v *Textspan) GetYOffsetLayout() float64 {
 
 func (v *Textspan) getYOffsetLayout(ctx context.Context) (float64, error) {
 	var zero float64
-	p, err := mod.getField(ctx, "Textspan_y_offset_layout", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Textspan_y_offset_layout(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13915,7 +15679,8 @@ func (v *Textspan) SetYOffsetCenterLine(_arg float64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Textspan_y_offset_center_line", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Textspan_y_offset_center_line(int32(v.getPtr()), float64(arg))
+	return nil
 }
 
 func (v *Textspan) GetYOffsetCenterLine() float64 {
@@ -13928,7 +15693,13 @@ func (v *Textspan) GetYOffsetCenterLine() float64 {
 
 func (v *Textspan) getYOffsetCenterLine(ctx context.Context) (float64, error) {
 	var zero float64
-	p, err := mod.getField(ctx, "Textspan_y_offset_center_line", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Textspan_y_offset_center_line(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13945,7 +15716,8 @@ func (v *Textspan) SetSize(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Textspan_size", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Textspan_size(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *Textspan) GetSize() *PointFloat {
@@ -13958,7 +15730,13 @@ func (v *Textspan) GetSize() *PointFloat {
 
 func (v *Textspan) getSize(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "Textspan_size", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Textspan_size(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -13972,7 +15750,8 @@ func (v *Textspan) SetJust(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "Textspan_just", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_Textspan_just(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *Textspan) GetJust() int64 {
@@ -13985,7 +15764,13 @@ func (v *Textspan) GetJust() int64 {
 
 func (v *Textspan) getJust(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "Textspan_just", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_Textspan_just(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14031,7 +15816,8 @@ func (v *RenderEngine) SetBeginJob(ctx context.Context, arg *CallbackFunc[func(c
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginJob before")
 	}
 	mod.callbackFuncMap.RenderEngine_BeginJob[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_begin_job", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_begin_job(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetEndJob(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14039,7 +15825,8 @@ func (v *RenderEngine) SetEndJob(ctx context.Context, arg *CallbackFunc[func(con
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndJob before")
 	}
 	mod.callbackFuncMap.RenderEngine_EndJob[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_end_job", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_end_job(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetBeginGraph(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14047,7 +15834,8 @@ func (v *RenderEngine) SetBeginGraph(ctx context.Context, arg *CallbackFunc[func
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginGraph before")
 	}
 	mod.callbackFuncMap.RenderEngine_BeginGraph[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_begin_graph", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_begin_graph(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetEndGraph(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14055,7 +15843,8 @@ func (v *RenderEngine) SetEndGraph(ctx context.Context, arg *CallbackFunc[func(c
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndGraph before")
 	}
 	mod.callbackFuncMap.RenderEngine_EndGraph[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_end_graph", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_end_graph(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetBeginLayer(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, string, int, int) error]) error {
@@ -14063,7 +15852,8 @@ func (v *RenderEngine) SetBeginLayer(ctx context.Context, arg *CallbackFunc[func
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginLayer before")
 	}
 	mod.callbackFuncMap.RenderEngine_BeginLayer[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_begin_layer", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_begin_layer(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetEndLayer(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14071,7 +15861,8 @@ func (v *RenderEngine) SetEndLayer(ctx context.Context, arg *CallbackFunc[func(c
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndLayer before")
 	}
 	mod.callbackFuncMap.RenderEngine_EndLayer[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_end_layer", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_end_layer(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetBeginPage(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14079,7 +15870,8 @@ func (v *RenderEngine) SetBeginPage(ctx context.Context, arg *CallbackFunc[func(
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginPage before")
 	}
 	mod.callbackFuncMap.RenderEngine_BeginPage[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_begin_page", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_begin_page(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetEndPage(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14087,7 +15879,8 @@ func (v *RenderEngine) SetEndPage(ctx context.Context, arg *CallbackFunc[func(co
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndPage before")
 	}
 	mod.callbackFuncMap.RenderEngine_EndPage[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_end_page", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_end_page(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetBeginCluster(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14095,7 +15888,8 @@ func (v *RenderEngine) SetBeginCluster(ctx context.Context, arg *CallbackFunc[fu
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginCluster before")
 	}
 	mod.callbackFuncMap.RenderEngine_BeginCluster[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_begin_cluster", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_begin_cluster(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetEndCluster(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14103,7 +15897,8 @@ func (v *RenderEngine) SetEndCluster(ctx context.Context, arg *CallbackFunc[func
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndCluster before")
 	}
 	mod.callbackFuncMap.RenderEngine_EndCluster[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_end_cluster", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_end_cluster(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetBeginNodes(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14111,7 +15906,8 @@ func (v *RenderEngine) SetBeginNodes(ctx context.Context, arg *CallbackFunc[func
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginNodes before")
 	}
 	mod.callbackFuncMap.RenderEngine_BeginNodes[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_begin_nodes", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_begin_nodes(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetEndNodes(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14119,7 +15915,8 @@ func (v *RenderEngine) SetEndNodes(ctx context.Context, arg *CallbackFunc[func(c
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndNodes before")
 	}
 	mod.callbackFuncMap.RenderEngine_EndNodes[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_end_nodes", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_end_nodes(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetBeginEdges(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14127,7 +15924,8 @@ func (v *RenderEngine) SetBeginEdges(ctx context.Context, arg *CallbackFunc[func
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginEdges before")
 	}
 	mod.callbackFuncMap.RenderEngine_BeginEdges[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_begin_edges", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_begin_edges(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetEndEdges(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14135,7 +15933,8 @@ func (v *RenderEngine) SetEndEdges(ctx context.Context, arg *CallbackFunc[func(c
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndEdges before")
 	}
 	mod.callbackFuncMap.RenderEngine_EndEdges[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_end_edges", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_end_edges(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetBeginNode(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14143,7 +15942,8 @@ func (v *RenderEngine) SetBeginNode(ctx context.Context, arg *CallbackFunc[func(
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginNode before")
 	}
 	mod.callbackFuncMap.RenderEngine_BeginNode[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_begin_node", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_begin_node(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetEndNode(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14151,7 +15951,8 @@ func (v *RenderEngine) SetEndNode(ctx context.Context, arg *CallbackFunc[func(co
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndNode before")
 	}
 	mod.callbackFuncMap.RenderEngine_EndNode[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_end_node", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_end_node(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetBeginEdge(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14159,7 +15960,8 @@ func (v *RenderEngine) SetBeginEdge(ctx context.Context, arg *CallbackFunc[func(
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginEdge before")
 	}
 	mod.callbackFuncMap.RenderEngine_BeginEdge[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_begin_edge", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_begin_edge(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetEndEdge(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14167,7 +15969,8 @@ func (v *RenderEngine) SetEndEdge(ctx context.Context, arg *CallbackFunc[func(co
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndEdge before")
 	}
 	mod.callbackFuncMap.RenderEngine_EndEdge[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_end_edge", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_end_edge(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetBeginAnchor(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, string, string, string, string) error]) error {
@@ -14175,7 +15978,8 @@ func (v *RenderEngine) SetBeginAnchor(ctx context.Context, arg *CallbackFunc[fun
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginAnchor before")
 	}
 	mod.callbackFuncMap.RenderEngine_BeginAnchor[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_begin_anchor", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_begin_anchor(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetEndAnchor(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14183,7 +15987,8 @@ func (v *RenderEngine) SetEndAnchor(ctx context.Context, arg *CallbackFunc[func(
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndAnchor before")
 	}
 	mod.callbackFuncMap.RenderEngine_EndAnchor[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_end_anchor", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_end_anchor(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetBeginLabel(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, LabelType) error]) error {
@@ -14191,7 +15996,8 @@ func (v *RenderEngine) SetBeginLabel(ctx context.Context, arg *CallbackFunc[func
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_BeginLabel before")
 	}
 	mod.callbackFuncMap.RenderEngine_BeginLabel[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_begin_label", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_begin_label(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetEndLabel(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job) error]) error {
@@ -14199,7 +16005,8 @@ func (v *RenderEngine) SetEndLabel(ctx context.Context, arg *CallbackFunc[func(c
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_EndLabel before")
 	}
 	mod.callbackFuncMap.RenderEngine_EndLabel[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_end_label", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_end_label(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetTextspan(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, *PointFloat, *Textspan) error]) error {
@@ -14207,7 +16014,8 @@ func (v *RenderEngine) SetTextspan(ctx context.Context, arg *CallbackFunc[func(c
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Textspan before")
 	}
 	mod.callbackFuncMap.RenderEngine_Textspan[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_textspan", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_textspan(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetResolveColor(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, *Color) error]) error {
@@ -14215,7 +16023,8 @@ func (v *RenderEngine) SetResolveColor(ctx context.Context, arg *CallbackFunc[fu
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_ResolveColor before")
 	}
 	mod.callbackFuncMap.RenderEngine_ResolveColor[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_resolve_color", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_resolve_color(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetEllipse(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, []*PointFloat, int) error]) error {
@@ -14223,7 +16032,8 @@ func (v *RenderEngine) SetEllipse(ctx context.Context, arg *CallbackFunc[func(co
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Ellipse before")
 	}
 	mod.callbackFuncMap.RenderEngine_Ellipse[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_ellipse", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_ellipse(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetPolygon(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, []*PointFloat, uint32, int) error]) error {
@@ -14231,7 +16041,8 @@ func (v *RenderEngine) SetPolygon(ctx context.Context, arg *CallbackFunc[func(co
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Polygon before")
 	}
 	mod.callbackFuncMap.RenderEngine_Polygon[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_polygon", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_polygon(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetBeziercurve(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, []*PointFloat, uint32, int) error]) error {
@@ -14239,7 +16050,8 @@ func (v *RenderEngine) SetBeziercurve(ctx context.Context, arg *CallbackFunc[fun
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Beziercurve before")
 	}
 	mod.callbackFuncMap.RenderEngine_Beziercurve[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_beziercurve", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_beziercurve(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetPolyline(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, []*PointFloat, uint32) error]) error {
@@ -14247,7 +16059,8 @@ func (v *RenderEngine) SetPolyline(ctx context.Context, arg *CallbackFunc[func(c
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Polyline before")
 	}
 	mod.callbackFuncMap.RenderEngine_Polyline[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_polyline", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_polyline(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetComment(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, string) error]) error {
@@ -14255,7 +16068,8 @@ func (v *RenderEngine) SetComment(ctx context.Context, arg *CallbackFunc[func(co
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_Comment before")
 	}
 	mod.callbackFuncMap.RenderEngine_Comment[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_comment", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_comment(int32(v.getPtr()))
+	return nil
 }
 
 func (v *RenderEngine) SetLibraryShape(ctx context.Context, arg *CallbackFunc[func(context.Context, *Job, string, []*PointFloat, uint32, int) error]) error {
@@ -14263,7 +16077,8 @@ func (v *RenderEngine) SetLibraryShape(ctx context.Context, arg *CallbackFunc[fu
 		return fmt.Errorf("cannot find lookup function. you must call Register_RenderEngine_LibraryShape before")
 	}
 	mod.callbackFuncMap.RenderEngine_LibraryShape[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "RenderEngine_library_shape", v.getPtr())
+	mod.module.Xwasm_bridge_set_RenderEngine_library_shape(int32(v.getPtr()))
+	return nil
 }
 
 type FormatterEngine struct {
@@ -14330,7 +16145,8 @@ func (v *LayoutEngine) SetLayout(ctx context.Context, arg *CallbackFunc[func(con
 		return fmt.Errorf("cannot find lookup function. you must call Register_LayoutEngine_Layout before")
 	}
 	mod.callbackFuncMap.LayoutEngine_Layout[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "LayoutEngine_layout", v.getPtr())
+	mod.module.Xwasm_bridge_set_LayoutEngine_layout(int32(v.getPtr()))
+	return nil
 }
 
 func (v *LayoutEngine) SetCleanup(ctx context.Context, arg *CallbackFunc[func(context.Context, *Graph) error]) error {
@@ -14338,7 +16154,8 @@ func (v *LayoutEngine) SetCleanup(ctx context.Context, arg *CallbackFunc[func(co
 		return fmt.Errorf("cannot find lookup function. you must call Register_LayoutEngine_Cleanup before")
 	}
 	mod.callbackFuncMap.LayoutEngine_Cleanup[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "LayoutEngine_cleanup", v.getPtr())
+	mod.module.Xwasm_bridge_set_LayoutEngine_cleanup(int32(v.getPtr()))
+	return nil
 }
 
 type TextLayoutEngine struct {
@@ -14379,7 +16196,8 @@ func (v *TextLayoutEngine) SetTextlayout(ctx context.Context, arg *CallbackFunc[
 		return fmt.Errorf("cannot find lookup function. you must call Register_TextLayoutEngine_TextLayout before")
 	}
 	mod.callbackFuncMap.TextLayoutEngine_TextLayout[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "TextLayoutEngine_textlayout", v.getPtr())
+	mod.module.Xwasm_bridge_set_TextLayoutEngine_textlayout(int32(v.getPtr()))
+	return nil
 }
 
 type LoadImageEngine struct {
@@ -14420,7 +16238,8 @@ func (v *LoadImageEngine) SetLoadImage(ctx context.Context, arg *CallbackFunc[fu
 		return fmt.Errorf("cannot find lookup function. you must call Register_LoadImageEngine_LoadImage before")
 	}
 	mod.callbackFuncMap.LoadImageEngine_LoadImage[arg.funcID] = arg.cb
-	return mod.setFieldFunction(ctx, "LoadImageEngine_load_image", v.getPtr())
+	mod.module.Xwasm_bridge_set_LoadImageEngine_load_image(int32(v.getPtr()))
+	return nil
 }
 
 type Engine struct {
@@ -14496,7 +16315,8 @@ func (v *LayoutFeatures) SetFlags(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "LayoutFeatures_flags", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_LayoutFeatures_flags(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *LayoutFeatures) GetFlags() int64 {
@@ -14509,7 +16329,13 @@ func (v *LayoutFeatures) GetFlags() int64 {
 
 func (v *LayoutFeatures) getFlags(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "LayoutFeatures_flags", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_LayoutFeatures_flags(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14556,7 +16382,8 @@ func (v *DeviceFeatures) SetFlags(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DeviceFeatures_flags", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DeviceFeatures_flags(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *DeviceFeatures) GetFlags() int64 {
@@ -14569,7 +16396,13 @@ func (v *DeviceFeatures) GetFlags() int64 {
 
 func (v *DeviceFeatures) getFlags(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "DeviceFeatures_flags", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DeviceFeatures_flags(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14583,7 +16416,8 @@ func (v *DeviceFeatures) SetDefaultMargin(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DeviceFeatures_default_margin", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DeviceFeatures_default_margin(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *DeviceFeatures) GetDefaultMargin() *PointFloat {
@@ -14596,7 +16430,13 @@ func (v *DeviceFeatures) GetDefaultMargin() *PointFloat {
 
 func (v *DeviceFeatures) getDefaultMargin(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "DeviceFeatures_default_margin", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DeviceFeatures_default_margin(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14610,7 +16450,8 @@ func (v *DeviceFeatures) SetDefaultPagesize(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DeviceFeatures_default_pagesize", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DeviceFeatures_default_pagesize(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *DeviceFeatures) GetDefaultPagesize() *PointFloat {
@@ -14623,7 +16464,13 @@ func (v *DeviceFeatures) GetDefaultPagesize() *PointFloat {
 
 func (v *DeviceFeatures) getDefaultPagesize(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "DeviceFeatures_default_pagesize", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DeviceFeatures_default_pagesize(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14637,7 +16484,8 @@ func (v *DeviceFeatures) SetDefaultDpi(_arg *PointFloat) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "DeviceFeatures_default_dpi", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_DeviceFeatures_default_dpi(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *DeviceFeatures) GetDefaultDpi() *PointFloat {
@@ -14650,7 +16498,13 @@ func (v *DeviceFeatures) GetDefaultDpi() *PointFloat {
 
 func (v *DeviceFeatures) getDefaultDpi(ctx context.Context) (*PointFloat, error) {
 	var zero *PointFloat
-	p, err := mod.getField(ctx, "DeviceFeatures_default_dpi", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_DeviceFeatures_default_dpi(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14697,7 +16551,8 @@ func (v *RenderFeatures) SetFlags(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "RenderFeatures_flags", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_RenderFeatures_flags(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *RenderFeatures) GetFlags() int64 {
@@ -14710,7 +16565,13 @@ func (v *RenderFeatures) GetFlags() int64 {
 
 func (v *RenderFeatures) getFlags(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "RenderFeatures_flags", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_RenderFeatures_flags(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14724,7 +16585,8 @@ func (v *RenderFeatures) SetDefaultPad(_arg float64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "RenderFeatures_default_pad", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_RenderFeatures_default_pad(int32(v.getPtr()), float64(arg))
+	return nil
 }
 
 func (v *RenderFeatures) GetDefaultPad() float64 {
@@ -14737,7 +16599,13 @@ func (v *RenderFeatures) GetDefaultPad() float64 {
 
 func (v *RenderFeatures) getDefaultPad(ctx context.Context) (float64, error) {
 	var zero float64
-	p, err := mod.getField(ctx, "RenderFeatures_default_pad", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_RenderFeatures_default_pad(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14754,7 +16622,8 @@ func (v *RenderFeatures) SetKnownColors(_arg []string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "RenderFeatures_known_colors", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_RenderFeatures_known_colors(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *RenderFeatures) GetKnownColors() []string {
@@ -14767,7 +16636,13 @@ func (v *RenderFeatures) GetKnownColors() []string {
 
 func (v *RenderFeatures) getKnownColors(ctx context.Context) ([]string, error) {
 	var zero []string
-	p, err := mod.getField(ctx, "RenderFeatures_known_colors", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_RenderFeatures_known_colors(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14788,7 +16663,8 @@ func (v *RenderFeatures) SetSizeKnownColors(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "RenderFeatures_size_known_colors", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_RenderFeatures_size_known_colors(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *RenderFeatures) GetSizeKnownColors() int64 {
@@ -14801,7 +16677,13 @@ func (v *RenderFeatures) GetSizeKnownColors() int64 {
 
 func (v *RenderFeatures) getSizeKnownColors(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "RenderFeatures_size_known_colors", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_RenderFeatures_size_known_colors(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14815,7 +16697,8 @@ func (v *RenderFeatures) SetColorType(_arg ColorType) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "RenderFeatures_color_type", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_RenderFeatures_color_type(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *RenderFeatures) GetColorType() ColorType {
@@ -14828,7 +16711,13 @@ func (v *RenderFeatures) GetColorType() ColorType {
 
 func (v *RenderFeatures) getColorType(ctx context.Context) (ColorType, error) {
 	var zero ColorType
-	p, err := mod.getField(ctx, "RenderFeatures_color_type", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_RenderFeatures_color_type(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14909,7 +16798,8 @@ func (v *PluginInstalled) SetId(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginInstalled_id", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginInstalled_id(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *PluginInstalled) GetId() int64 {
@@ -14922,7 +16812,13 @@ func (v *PluginInstalled) GetId() int64 {
 
 func (v *PluginInstalled) getId(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "PluginInstalled_id", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginInstalled_id(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14936,7 +16832,8 @@ func (v *PluginInstalled) SetType(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginInstalled_type", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginInstalled_type(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginInstalled) GetType() string {
@@ -14949,7 +16846,13 @@ func (v *PluginInstalled) GetType() string {
 
 func (v *PluginInstalled) getType(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PluginInstalled_type", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginInstalled_type(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14966,7 +16869,8 @@ func (v *PluginInstalled) SetQuality(_arg int64) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginInstalled_quality", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginInstalled_quality(int32(v.getPtr()), int64(arg))
+	return nil
 }
 
 func (v *PluginInstalled) GetQuality() int64 {
@@ -14979,7 +16883,13 @@ func (v *PluginInstalled) GetQuality() int64 {
 
 func (v *PluginInstalled) getQuality(ctx context.Context) (int64, error) {
 	var zero int64
-	p, err := mod.getField(ctx, "PluginInstalled_quality", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginInstalled_quality(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -14993,7 +16903,8 @@ func (v *PluginInstalled) SetEngine(_arg any) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginInstalled_engine", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginInstalled_engine(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginInstalled) GetEngine() any {
@@ -15006,7 +16917,13 @@ func (v *PluginInstalled) GetEngine() any {
 
 func (v *PluginInstalled) getEngine(ctx context.Context) (any, error) {
 	var zero any
-	p, err := mod.getField(ctx, "PluginInstalled_engine", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginInstalled_engine(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15020,7 +16937,8 @@ func (v *PluginInstalled) SetFeatures(_arg any) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginInstalled_features", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginInstalled_features(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginInstalled) GetFeatures() any {
@@ -15033,7 +16951,13 @@ func (v *PluginInstalled) GetFeatures() any {
 
 func (v *PluginInstalled) getFeatures(ctx context.Context) (any, error) {
 	var zero any
-	p, err := mod.getField(ctx, "PluginInstalled_features", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginInstalled_features(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15080,7 +17004,8 @@ func (v *PluginAPI) SetApi(_arg API) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginAPI_api", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginAPI_api(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginAPI) GetApi() API {
@@ -15093,7 +17018,13 @@ func (v *PluginAPI) GetApi() API {
 
 func (v *PluginAPI) getApi(ctx context.Context) (API, error) {
 	var zero API
-	p, err := mod.getField(ctx, "PluginAPI_api", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginAPI_api(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15107,7 +17038,8 @@ func (v *PluginAPI) SetTypes(_arg []*PluginInstalled) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginAPI_types", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginAPI_types(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginAPI) GetTypes() []*PluginInstalled {
@@ -15120,7 +17052,13 @@ func (v *PluginAPI) GetTypes() []*PluginInstalled {
 
 func (v *PluginAPI) getTypes(ctx context.Context) ([]*PluginInstalled, error) {
 	var zero []*PluginInstalled
-	p, err := mod.getField(ctx, "PluginAPI_types", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginAPI_types(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15171,7 +17109,8 @@ func (v *PluginLibrary) SetPackageName(_arg string) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginLibrary_package_name", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginLibrary_package_name(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginLibrary) GetPackageName() string {
@@ -15184,7 +17123,13 @@ func (v *PluginLibrary) GetPackageName() string {
 
 func (v *PluginLibrary) getPackageName(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.getField(ctx, "PluginLibrary_package_name", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginLibrary_package_name(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15201,7 +17146,8 @@ func (v *PluginLibrary) SetApis(_arg []*PluginAPI) error {
 	if err != nil {
 		return err
 	}
-	return mod.setField(ctx, "PluginLibrary_apis", v.getPtr(), arg)
+	mod.module.Xwasm_bridge_set_PluginLibrary_apis(int32(v.getPtr()), int32(arg))
+	return nil
 }
 
 func (v *PluginLibrary) GetApis() []*PluginAPI {
@@ -15214,7 +17160,13 @@ func (v *PluginLibrary) GetApis() []*PluginAPI {
 
 func (v *PluginLibrary) getApis(ctx context.Context) ([]*PluginAPI, error) {
 	var zero []*PluginAPI
-	p, err := mod.getField(ctx, "PluginLibrary_apis", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_get_PluginLibrary_apis(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15683,7 +17635,13 @@ func (v API) String() string {
 
 func (v *Graph) Close(ctx context.Context) (int, error) {
 	var zero int
-	p, err := mod.callWithRet(ctx, "Graph_close", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_close(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15693,7 +17651,13 @@ func (v *Graph) Close(ctx context.Context) (int, error) {
 
 func (v *Graph) IsSimple(ctx context.Context) (int, error) {
 	var zero int
-	p, err := mod.callWithRet(ctx, "Graph_isSimple", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_isSimple(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15711,7 +17675,13 @@ func (v *Graph) Node(ctx context.Context, _arg0 string, _arg1 int) (*Node, error
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_node", v.getPtr(), arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_node(int32(v.getPtr()), int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15729,7 +17699,13 @@ func (v *Graph) IdNode(ctx context.Context, _arg0 uint64, _arg1 int) (*Node, err
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_idNode", v.getPtr(), arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_idNode(int32(v.getPtr()), int64(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15747,7 +17723,13 @@ func (v *Graph) SubNode(ctx context.Context, _arg0 *Node, _arg1 int) (*Node, err
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_subNode", v.getPtr(), arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_subNode(int32(v.getPtr()), int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15757,7 +17739,13 @@ func (v *Graph) SubNode(ctx context.Context, _arg0 *Node, _arg1 int) (*Node, err
 
 func (v *Graph) FirstNode(ctx context.Context) (*Node, error) {
 	var zero *Node
-	p, err := mod.callWithRet(ctx, "Graph_firstNode", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_firstNode(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15771,7 +17759,13 @@ func (v *Graph) NextNode(ctx context.Context, _arg0 *Node) (*Node, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_nextNode", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_nextNode(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15781,7 +17775,13 @@ func (v *Graph) NextNode(ctx context.Context, _arg0 *Node) (*Node, error) {
 
 func (v *Graph) LastNode(ctx context.Context) (*Node, error) {
 	var zero *Node
-	p, err := mod.callWithRet(ctx, "Graph_lastNode", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_lastNode(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15795,7 +17795,13 @@ func (v *Graph) PrevNode(ctx context.Context, _arg0 *Node) (*Node, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_prevNode", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_prevNode(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15809,7 +17815,13 @@ func (v *Graph) SubRep(ctx context.Context, _arg0 *Node) (*SubNode, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_subRep", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_subRep(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15823,7 +17835,13 @@ func (v *Node) Before(ctx context.Context, _arg0 *Node) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Node_before", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Node_before(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15849,7 +17867,13 @@ func (v *Graph) Edge(ctx context.Context, _arg0 *Node, _arg1 *Node, _arg2 string
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_edge", v.getPtr(), arg0, arg1, arg2, arg3)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_edge(int32(v.getPtr()), int32(arg0), int32(arg1), int32(arg2), int32(arg3), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15859,7 +17883,13 @@ func (v *Graph) Edge(ctx context.Context, _arg0 *Node, _arg1 *Node, _arg2 string
 
 func (v *Edge) Head(ctx context.Context) (*Node, error) {
 	var zero *Node
-	p, err := mod.callWithRet(ctx, "Edge_head", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Edge_head(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15869,7 +17899,13 @@ func (v *Edge) Head(ctx context.Context) (*Node, error) {
 
 func (v *Edge) Tail(ctx context.Context) (*Node, error) {
 	var zero *Node
-	p, err := mod.callWithRet(ctx, "Edge_tail", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Edge_tail(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15895,7 +17931,13 @@ func (v *Graph) IdEdge(ctx context.Context, _arg0 *Node, _arg1 *Node, _arg2 uint
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_idEdge", v.getPtr(), arg0, arg1, arg2, arg3)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_idEdge(int32(v.getPtr()), int32(arg0), int32(arg1), int64(arg2), int32(arg3), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15913,7 +17955,13 @@ func (v *Graph) SubEdge(ctx context.Context, _arg0 *Edge, _arg1 int) (*Edge, err
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_subEdge", v.getPtr(), arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_subEdge(int32(v.getPtr()), int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15927,7 +17975,13 @@ func (v *Graph) FirstIn(ctx context.Context, _arg0 *Node) (*Edge, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_firstIn", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_firstIn(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15941,7 +17995,13 @@ func (v *Graph) NextIn(ctx context.Context, _arg0 *Edge) (*Edge, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_nextIn", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_nextIn(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15955,7 +18015,13 @@ func (v *Graph) FirstOut(ctx context.Context, _arg0 *Node) (*Edge, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_firstOut", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_firstOut(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15969,7 +18035,13 @@ func (v *Graph) NextOut(ctx context.Context, _arg0 *Edge) (*Edge, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_nextOut", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_nextOut(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -15983,7 +18055,13 @@ func (v *Graph) FirstEdge(ctx context.Context, _arg0 *Node) (*Edge, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_firstEdge", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_firstEdge(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16001,7 +18079,13 @@ func (v *Graph) NextEdge(ctx context.Context, _arg0 *Edge, _arg1 *Node) (*Edge, 
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_nextEdge", v.getPtr(), arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_nextEdge(int32(v.getPtr()), int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16015,7 +18099,13 @@ func (v *Graph) Contains(ctx context.Context, _arg0 any) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_contains", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_contains(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16029,7 +18119,13 @@ func (v *Node) ReLabel(ctx context.Context, _arg0 string) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Node_reLabel", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Node_reLabel(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16043,7 +18139,13 @@ func (v *Graph) Delete(ctx context.Context, _arg0 any) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_delete", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_delete(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16057,7 +18159,13 @@ func (v *Graph) DeleteSubGraph(ctx context.Context, _arg0 *Graph) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_deleteSubGraph", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_deleteSubGraph(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16071,7 +18179,13 @@ func (v *Graph) DeleteNode(ctx context.Context, _arg0 *Node) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_deleteNode", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_deleteNode(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16085,7 +18199,13 @@ func (v *Graph) DeleteEdge(ctx context.Context, _arg0 *Edge) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_deleteEdge", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_deleteEdge(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16099,7 +18219,13 @@ func (v *Graph) Strdup(ctx context.Context, _arg0 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_strdup", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_strdup(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16116,7 +18242,13 @@ func (v *Graph) StrdupHTML(ctx context.Context, _arg0 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_strdupHTML", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_strdupHTML(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16133,7 +18265,13 @@ func (v *Graph) StrBind(ctx context.Context, _arg0 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_strBind", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_strBind(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16150,7 +18288,13 @@ func (v *Graph) StrFree(ctx context.Context, _arg0 string) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_strFree", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_strFree(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16172,7 +18316,13 @@ func (v *Graph) Attr(ctx context.Context, _arg0 int, _arg1 string, _arg2 string)
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_attr", v.getPtr(), arg0, arg1, arg2)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_attr(int32(v.getPtr()), int32(arg0), int32(arg1), int32(arg2), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16190,7 +18340,13 @@ func (v *Graph) NextAttr(ctx context.Context, _arg0 int, _arg1 *Sym) (*Sym, erro
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_nextAttr", v.getPtr(), arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_nextAttr(int32(v.getPtr()), int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16215,9 +18371,7 @@ func (v *Graph) Init(ctx context.Context, _arg0 int, _arg1 string, _arg2 int, _a
 	if err != nil {
 		return err
 	}
-	if err := mod.call(ctx, "Graph_init", v.getPtr(), arg0, arg1, arg2, arg3); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_Graph_init(int32(v.getPtr()), int32(arg0), int32(arg1), int32(arg2), int32(arg3))
 	return nil
 }
 
@@ -16230,9 +18384,7 @@ func (v *Graph) Clean(ctx context.Context, _arg0 int, _arg1 string) error {
 	if err != nil {
 		return err
 	}
-	if err := mod.call(ctx, "Graph_clean", v.getPtr(), arg0, arg1); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_Graph_clean(int32(v.getPtr()), int32(arg0), int32(arg1))
 	return nil
 }
 
@@ -16246,7 +18398,13 @@ func (v *Graph) SubGraph(ctx context.Context, _arg0 string, _arg1 int) (*Graph, 
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_subGraph", v.getPtr(), arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_subGraph(int32(v.getPtr()), int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16264,7 +18422,13 @@ func (v *Graph) IdSubGraph(ctx context.Context, _arg0 uint64, _arg1 int) (*Graph
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_idSubGraph", v.getPtr(), arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_idSubGraph(int32(v.getPtr()), int64(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16274,7 +18438,13 @@ func (v *Graph) IdSubGraph(ctx context.Context, _arg0 uint64, _arg1 int) (*Graph
 
 func (v *Graph) FirstSubGraph(ctx context.Context) (*Graph, error) {
 	var zero *Graph
-	p, err := mod.callWithRet(ctx, "Graph_firstSubGraph", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_firstSubGraph(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16284,7 +18454,13 @@ func (v *Graph) FirstSubGraph(ctx context.Context) (*Graph, error) {
 
 func (v *Graph) NextSubGraph(ctx context.Context) (*Graph, error) {
 	var zero *Graph
-	p, err := mod.callWithRet(ctx, "Graph_nextSubGraph", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_nextSubGraph(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16294,7 +18470,13 @@ func (v *Graph) NextSubGraph(ctx context.Context) (*Graph, error) {
 
 func (v *Graph) Parent(ctx context.Context) (*Graph, error) {
 	var zero *Graph
-	p, err := mod.callWithRet(ctx, "Graph_parent", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_parent(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16304,7 +18486,13 @@ func (v *Graph) Parent(ctx context.Context) (*Graph, error) {
 
 func (v *Graph) NodeNum(ctx context.Context) (int, error) {
 	var zero int
-	p, err := mod.callWithRet(ctx, "Graph_nodeNum", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_nodeNum(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16314,7 +18502,13 @@ func (v *Graph) NodeNum(ctx context.Context) (int, error) {
 
 func (v *Graph) EdgeNum(ctx context.Context) (int, error) {
 	var zero int
-	p, err := mod.callWithRet(ctx, "Graph_edgeNum", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_edgeNum(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16324,7 +18518,13 @@ func (v *Graph) EdgeNum(ctx context.Context) (int, error) {
 
 func (v *Graph) SubGraphNum(ctx context.Context) (int, error) {
 	var zero int
-	p, err := mod.callWithRet(ctx, "Graph_subGraphNum", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_subGraphNum(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16346,7 +18546,13 @@ func (v *Graph) Degree(ctx context.Context, _arg0 *Node, _arg1 int, _arg2 int) (
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_degree", v.getPtr(), arg0, arg1, arg2)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_degree(int32(v.getPtr()), int32(arg0), int32(arg1), int32(arg2), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16368,7 +18574,13 @@ func (v *Graph) CountUniqueEdges(ctx context.Context, _arg0 *Node, _arg1 int, _a
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_countUniqueEdges", v.getPtr(), arg0, arg1, arg2)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_countUniqueEdges(int32(v.getPtr()), int32(arg0), int32(arg1), int32(arg2), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16382,7 +18594,13 @@ func (v *Graph) Alloc(ctx context.Context, _arg0 uint64) (any, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_alloc", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_alloc(int32(v.getPtr()), int64(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16404,7 +18622,13 @@ func (v *Graph) Realloc(ctx context.Context, _arg0 any, _arg1 uint64, _arg2 uint
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Graph_realloc", v.getPtr(), arg0, arg1, arg2)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_realloc(int32(v.getPtr()), int32(arg0), int64(arg1), int64(arg2), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16417,15 +18641,19 @@ func (v *Graph) Free(ctx context.Context, _arg0 any) error {
 	if err != nil {
 		return err
 	}
-	if err := mod.call(ctx, "Graph_free", v.getPtr(), arg0); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_Graph_free(int32(v.getPtr()), int32(arg0))
 	return nil
 }
 
 func (v *Dict) Close(ctx context.Context) (int, error) {
 	var zero int
-	p, err := mod.callWithRet(ctx, "Dict_close", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Dict_close(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16439,7 +18667,13 @@ func (v *Dict) View(ctx context.Context, _arg0 *Dict) (*Dict, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Dict_view", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Dict_view(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16453,7 +18687,13 @@ func (v *Dict) Disc(ctx context.Context, _arg0 *DictDisc) (*DictDisc, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Dict_disc", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Dict_disc(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16467,7 +18707,13 @@ func (v *Dict) Method(ctx context.Context, _arg0 *DictMethod) (*DictMethod, erro
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Dict_method", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Dict_method(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16477,7 +18723,13 @@ func (v *Dict) Method(ctx context.Context, _arg0 *DictMethod) (*DictMethod, erro
 
 func (v *Dict) Flatten(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.callWithRet(ctx, "Dict_flatten", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Dict_flatten(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16487,7 +18739,13 @@ func (v *Dict) Flatten(ctx context.Context) (*DictLink, error) {
 
 func (v *Dict) Extract(ctx context.Context) (*DictLink, error) {
 	var zero *DictLink
-	p, err := mod.callWithRet(ctx, "Dict_extract", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Dict_extract(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16501,7 +18759,13 @@ func (v *Dict) Restore(ctx context.Context, _arg0 *DictLink) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Dict_restore", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Dict_restore(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16523,7 +18787,13 @@ func (v *Dict) Walk(ctx context.Context, _arg0 *CallbackFunc[func(context.Contex
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Dict_walk", v.getPtr(), arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Dict_walk(int32(v.getPtr()), int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16537,7 +18807,13 @@ func (v *Dict) Renew(ctx context.Context, _arg0 any) (any, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Dict_renew", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Dict_renew(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16547,7 +18823,13 @@ func (v *Dict) Renew(ctx context.Context, _arg0 any) (any, error) {
 
 func (v *Dict) Size(ctx context.Context) (int, error) {
 	var zero int
-	p, err := mod.callWithRet(ctx, "Dict_size", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Dict_size(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16565,7 +18847,13 @@ func (v *Dict) Stat(ctx context.Context, _arg0 *DictStat, _arg1 int) (int, error
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Dict_stat", v.getPtr(), arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Dict_stat(int32(v.getPtr()), int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16575,7 +18863,13 @@ func (v *Dict) Stat(ctx context.Context, _arg0 *DictStat, _arg1 int) (int, error
 
 func (v *Context) Info(ctx context.Context) ([]string, error) {
 	var zero []string
-	p, err := mod.callWithRet(ctx, "Context_info", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_info(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16592,7 +18886,13 @@ func (v *Context) Info(ctx context.Context) ([]string, error) {
 
 func (v *Context) Version(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.callWithRet(ctx, "Context_version", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_version(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16605,7 +18905,13 @@ func (v *Context) Version(ctx context.Context) (string, error) {
 
 func (v *Context) BuildDate(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.callWithRet(ctx, "Context_buildDate", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_buildDate(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16626,7 +18932,13 @@ func (v *Context) ParseArgs(ctx context.Context, _arg0 int, _arg1 []string) (int
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Context_parseArgs", v.getPtr(), arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_parseArgs(int32(v.getPtr()), int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16636,7 +18948,13 @@ func (v *Context) ParseArgs(ctx context.Context, _arg0 int, _arg1 []string) (int
 
 func (v *Context) NextInputGraph(ctx context.Context) (*Graph, error) {
 	var zero *Graph
-	p, err := mod.callWithRet(ctx, "Context_nextInputGraph", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_nextInputGraph(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16646,7 +18964,13 @@ func (v *Context) NextInputGraph(ctx context.Context) (*Graph, error) {
 
 func (v *Context) PluginsGraph(ctx context.Context) (*Graph, error) {
 	var zero *Graph
-	p, err := mod.callWithRet(ctx, "Context_pluginsGraph", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_pluginsGraph(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16664,7 +18988,13 @@ func (v *Context) Layout(ctx context.Context, _arg0 *Graph, _arg1 string) (int, 
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Context_layout", v.getPtr(), arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_layout(int32(v.getPtr()), int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16678,7 +19008,13 @@ func (v *Context) LayoutJobs(ctx context.Context, _arg0 *Graph) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Context_layoutJobs", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_layoutJobs(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16687,9 +19023,7 @@ func (v *Context) LayoutJobs(ctx context.Context, _arg0 *Graph) (int, error) {
 }
 
 func (v *Graph) AttachAttrs(ctx context.Context) error {
-	if err := mod.call(ctx, "Graph_attachAttrs", v.getPtr()); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_Graph_attachAttrs(int32(v.getPtr()))
 	return nil
 }
 
@@ -16707,7 +19041,13 @@ func (v *Context) Render(ctx context.Context, _arg0 *Graph, _arg1 string, _arg2 
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Context_render", v.getPtr(), arg0, arg1, arg2)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_render(int32(v.getPtr()), int32(arg0), int32(arg1), int32(arg2), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16729,7 +19069,13 @@ func (v *Context) RenderFilename(ctx context.Context, _arg0 *Graph, _arg1 string
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Context_renderFilename", v.getPtr(), arg0, arg1, arg2)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_renderFilename(int32(v.getPtr()), int32(arg0), int32(arg1), int32(arg2), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16751,7 +19097,13 @@ func (v *Context) RenderContext(ctx context.Context, _arg0 *Graph, _arg1 string,
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Context_renderContext", v.getPtr(), arg0, arg1, arg2)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_renderContext(int32(v.getPtr()), int32(arg0), int32(arg1), int32(arg2), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16777,7 +19129,13 @@ func (v *Context) RenderData(ctx context.Context, _arg0 *Graph, _arg1 string, _a
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Context_renderData", v.getPtr(), arg0, arg1, arg2, arg3)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_renderData(int32(v.getPtr()), int32(arg0), int32(arg1), int32(arg2), int32(arg3), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16810,7 +19168,13 @@ func (v *Context) RenderJobs(ctx context.Context, _arg0 *Graph) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Context_renderJobs", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_renderJobs(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16819,15 +19183,19 @@ func (v *Context) RenderJobs(ctx context.Context, _arg0 *Graph) (int, error) {
 }
 
 func (v *Context) Finalize(ctx context.Context) error {
-	if err := mod.call(ctx, "Context_finalize", v.getPtr()); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_Context_finalize(int32(v.getPtr()))
 	return nil
 }
 
 func (v *Context) FreeContext(ctx context.Context) (int, error) {
 	var zero int
-	p, err := mod.callWithRet(ctx, "Context_freeContext", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_freeContext(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16841,7 +19209,14 @@ func (v *Context) FreeLayout(ctx context.Context, _arg0 *Graph) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Context_freeLayout", v.getPtr(), arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.zeroGraphTextspanLayout(arg0)
+	mod.module.Xwasm_bridge_Context_freeLayout(int32(v.getPtr()), int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16859,7 +19234,13 @@ func (v *Context) PluginList(ctx context.Context, _arg0 string, _arg1 *int) ([]s
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "Context_pluginList", v.getPtr(), arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_pluginList(int32(v.getPtr()), int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16887,15 +19268,19 @@ func (v *Context) AddLibrary(ctx context.Context, _arg0 *PluginLibrary) error {
 	if err != nil {
 		return err
 	}
-	if err := mod.call(ctx, "Context_addLibrary", v.getPtr(), arg0); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_Context_addLibrary(int32(v.getPtr()), int32(arg0))
 	return nil
 }
 
 func (v *Graph) ToolTred(ctx context.Context) (int, error) {
 	var zero int
-	p, err := mod.callWithRet(ctx, "Graph_toolTred", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Graph_toolTred(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16905,7 +19290,13 @@ func (v *Graph) ToolTred(ctx context.Context) (int, error) {
 
 func (v *Context) Clone(ctx context.Context) (*Context, error) {
 	var zero *Context
-	p, err := mod.callWithRet(ctx, "Context_clone", v.getPtr())
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_Context_clone(int32(v.getPtr()), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16914,9 +19305,7 @@ func (v *Context) Clone(ctx context.Context) (*Context, error) {
 }
 
 func (v *Context) FreeClonedContext(ctx context.Context) error {
-	if err := mod.call(ctx, "Context_freeClonedContext", v.getPtr()); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_Context_freeClonedContext(int32(v.getPtr()))
 	return nil
 }
 
@@ -16933,9 +19322,7 @@ func PushDisc(ctx context.Context, _arg0 *Graph, _arg1 *ClientEventCallback, _ar
 	if err != nil {
 		return err
 	}
-	if err := mod.call(ctx, "pushDisc", arg0, arg1, arg2); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_pushDisc(int32(arg0), int32(arg1), int32(arg2))
 	return nil
 }
 
@@ -16949,7 +19336,13 @@ func PopDisc(ctx context.Context, _arg0 *Graph, _arg1 *ClientEventCallback) (int
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "popDisc", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_popDisc(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16971,7 +19364,13 @@ func Open(ctx context.Context, _arg0 string, _arg1 *GraphDescriptor, _arg2 *Clie
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "open", arg0, arg1, arg2)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_open(int32(arg0), int32(arg1), int32(arg2), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -16989,7 +19388,13 @@ func Read(ctx context.Context, _arg0 string, _arg1 *ClientDiscipline) (*Graph, e
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "read", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_read(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17003,7 +19408,13 @@ func MemRead(ctx context.Context, _arg0 string) (*Graph, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "memRead", arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_memRead(int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17016,9 +19427,7 @@ func Readline(ctx context.Context, _arg0 int) error {
 	if err != nil {
 		return err
 	}
-	if err := mod.call(ctx, "readline", arg0); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_readline(int32(arg0))
 	return nil
 }
 
@@ -17027,9 +19436,7 @@ func SetFile(ctx context.Context, _arg0 string) error {
 	if err != nil {
 		return err
 	}
-	if err := mod.call(ctx, "setFile", arg0); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_setFile(int32(arg0))
 	return nil
 }
 
@@ -17047,7 +19454,13 @@ func Concat(ctx context.Context, _arg0 *Graph, _arg1 any, _arg2 *ClientDisciplin
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "concat", arg0, arg1, arg2)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_concat(int32(arg0), int32(arg1), int32(arg2), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17065,7 +19478,13 @@ func Write(ctx context.Context, _arg0 *Graph, _arg1 any) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "write", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_write(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17079,7 +19498,13 @@ func IsDirected(ctx context.Context, _arg0 *Graph) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "isDirected", arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_isDirected(int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17093,7 +19518,13 @@ func IsUndirected(ctx context.Context, _arg0 *Graph) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "isUndirected", arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_isUndirected(int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17107,7 +19538,13 @@ func IsStrict(ctx context.Context, _arg0 *Graph) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "isStrict", arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_isStrict(int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17121,7 +19558,13 @@ func GraphOf(ctx context.Context, _arg0 any) (*Graph, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "graphOf", arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_graphOf(int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17135,7 +19578,13 @@ func GraphRoot(ctx context.Context, _arg0 any) (*Graph, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "graphRoot", arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_graphRoot(int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17149,7 +19598,13 @@ func GraphNameOf(ctx context.Context, _arg0 any) (string, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "graphNameOf", arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_graphNameOf(int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17166,7 +19621,13 @@ func ObjectKind(ctx context.Context, _arg0 any) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "objectKind", arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_objectKind(int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17180,7 +19641,13 @@ func HtmlStr(ctx context.Context, _arg0 string) (bool, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "htmlStr", arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_htmlStr(int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17198,7 +19665,13 @@ func Canon(ctx context.Context, _arg0 string, _arg1 int) (string, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "canon", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_canon(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17219,7 +19692,13 @@ func StrCanon(ctx context.Context, _arg0 string, _arg1 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "strCanon", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_strCanon(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17236,7 +19715,13 @@ func CanonStr(ctx context.Context, _arg0 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "canonStr", arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_canonStr(int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17257,7 +19742,13 @@ func AttrSym(ctx context.Context, _arg0 *Object, _arg1 string) (*Sym, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "attrSym", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_attrSym(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17275,7 +19766,13 @@ func CopyAttr(ctx context.Context, _arg0 any, _arg1 any) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "copyAttr", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_copyAttr(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17301,7 +19798,13 @@ func BindRecord(ctx context.Context, _arg0 any, _arg1 string, _arg2 uint, _arg3 
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "bindRecord", arg0, arg1, arg2, arg3)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_bindRecord(int32(arg0), int32(arg1), int32(arg2), int32(arg3), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17323,7 +19826,13 @@ func GetRecord(ctx context.Context, _arg0 any, _arg1 string, _arg2 int) (*Record
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "getRecord", arg0, arg1, arg2)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_getRecord(int32(arg0), int32(arg1), int32(arg2), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17341,7 +19850,13 @@ func DeleteRecord(ctx context.Context, _arg0 any, _arg1 string) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "deleteRecord", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_deleteRecord(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17359,7 +19874,13 @@ func GetStr(ctx context.Context, _arg0 any, _arg1 string) (string, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "getStr", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_getStr(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17380,7 +19901,13 @@ func GetSymName(ctx context.Context, _arg0 any, _arg1 *Sym) (string, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "getSymName", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_getSymName(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17405,7 +19932,13 @@ func SetStr(ctx context.Context, _arg0 any, _arg1 string, _arg2 string) (int, er
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "setStr", arg0, arg1, arg2)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_setStr(int32(arg0), int32(arg1), int32(arg2), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17427,7 +19960,13 @@ func SetSymName(ctx context.Context, _arg0 any, _arg1 *Sym, _arg2 string) (int, 
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "setSymName", arg0, arg1, arg2)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_setSymName(int32(arg0), int32(arg1), int32(arg2), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17453,7 +19992,13 @@ func SafeSetStr(ctx context.Context, _arg0 any, _arg1 string, _arg2 string, _arg
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "safeSetStr", arg0, arg1, arg2, arg3)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_safeSetStr(int32(arg0), int32(arg1), int32(arg2), int32(arg3), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17467,7 +20012,13 @@ func SetError(ctx context.Context, _arg0 ErrorLevel) (ErrorLevel, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "setError", arg0)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_setError(int32(arg0), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17477,7 +20028,13 @@ func SetError(ctx context.Context, _arg0 ErrorLevel) (ErrorLevel, error) {
 
 func LastError(ctx context.Context) (string, error) {
 	var zero string
-	p, err := mod.callWithRet(ctx, "lastError")
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_lastError(int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17498,7 +20055,13 @@ func Error(ctx context.Context, _arg0 ErrorLevel, _arg1 string) (int, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "error", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_error(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17511,9 +20074,7 @@ func Errorf(ctx context.Context, _arg0 string) error {
 	if err != nil {
 		return err
 	}
-	if err := mod.call(ctx, "errorf", arg0); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_errorf(int32(arg0))
 	return nil
 }
 
@@ -17522,15 +20083,19 @@ func Warningf(ctx context.Context, _arg0 string) error {
 	if err != nil {
 		return err
 	}
-	if err := mod.call(ctx, "warningf", arg0); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_warningf(int32(arg0))
 	return nil
 }
 
 func ErrorNum(ctx context.Context) (int, error) {
 	var zero int
-	p, err := mod.callWithRet(ctx, "errorNum")
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_errorNum(int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17540,7 +20105,13 @@ func ErrorNum(ctx context.Context) (int, error) {
 
 func ResetErrors(ctx context.Context) (int, error) {
 	var zero int
-	p, err := mod.callWithRet(ctx, "resetErrors")
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_resetErrors(int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17557,9 +20128,7 @@ func SetErrorf(ctx context.Context, _arg0 *CallbackFunc[func(context.Context, st
 	if err != nil {
 		return err
 	}
-	if err := mod.call(ctx, "setErrorf", arg0); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_setErrorf(int32(arg0))
 	return nil
 }
 
@@ -17573,7 +20142,13 @@ func NewDictWithDisc(ctx context.Context, _arg0 *DictDisc, _arg1 *DictMethod) (*
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "newDictWithDisc", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_newDictWithDisc(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17591,7 +20166,13 @@ func StrHash(ctx context.Context, _arg0 any, _arg1 int) (uint, error) {
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "strHash", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_strHash(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17604,9 +20185,7 @@ func Toggle(ctx context.Context, _arg0 int) error {
 	if err != nil {
 		return err
 	}
-	if err := mod.call(ctx, "toggle", arg0); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_toggle(int32(arg0))
 	return nil
 }
 
@@ -17620,7 +20199,13 @@ func NewContextWithSymList(ctx context.Context, _arg0 []*SymList, _arg1 int) (*C
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "newContextWithSymList", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_newContextWithSymList(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17630,7 +20215,13 @@ func NewContextWithSymList(ctx context.Context, _arg0 []*SymList, _arg1 int) (*C
 
 func GetContext(ctx context.Context) (*Context, error) {
 	var zero *Context
-	p, err := mod.callWithRet(ctx, "getContext")
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_getContext(int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17648,7 +20239,13 @@ func GetContextWithPlugins(ctx context.Context, _arg0 []*SymList, _arg1 int) (*C
 	if err != nil {
 		return zero, err
 	}
-	p, err := mod.callWithRet(ctx, "getContextWithPlugins", arg0, arg1)
+	retPtr, err := mod.NewPtr(ctx)
+	if err != nil {
+		return zero, err
+	}
+	defer mod.free(ctx, retPtr)
+	mod.module.Xwasm_bridge_getContextWithPlugins(int32(arg0), int32(arg1), int32(retPtr))
+	p, err := mod.readU32(retPtr)
 	if err != nil {
 		return zero, err
 	}
@@ -17661,8 +20258,6 @@ func FreeRenderData(ctx context.Context, _arg0 string) error {
 	if err != nil {
 		return err
 	}
-	if err := mod.call(ctx, "freeRenderData", arg0); err != nil {
-		return err
-	}
+	mod.module.Xwasm_bridge_freeRenderData(int32(arg0))
 	return nil
 }

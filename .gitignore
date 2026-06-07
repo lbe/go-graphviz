@@ -3,5 +3,7 @@
 *.png
 *.jpg
 .DS_Store
-bin
+/bin/
 internal/wasm/build/graphviz
+/.pi/
+/docs/
